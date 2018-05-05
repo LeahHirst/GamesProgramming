@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Doodad Dash Debugger</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+    <input type="text" name="eventName" id="eventName" />
+    <textarea name="message" id="message"></textarea>
+    <input type="button" value="submit" onclick="javascript:emitEvent()" />
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io();
+
+        function getVal(elementId) {
+            return document.getElementById(elementId).value;
+        }
+
+        function emitEvent() {
+            socket.emit(getVal('eventName'), JSON.parse(getVal('message')));
+        }
+    </script>
+</body>
+</html>
