@@ -44,10 +44,31 @@ module.exports = (io) => {
         }
     }
 
-    function addGame(gameId) {
+    /**
+     * Creates a new game instance and returns the ID
+     */
+    function createGame() {
+        // Generate a random ID for the game
+        var gId = rand.genereteRandomId(config.GAME_ID_LENGTH);
+        while (games[gId] != undefined) {
+            gId = rand.genereteRandomId(config.GAME_ID_LENGTH);
+        }
 
+        // Setup the game
+        games[gId] = {
+            users: {},
+            objects: []
+        };
+
+        // Return the ID
+        return gId;
     }
 
+    /**
+     * Joins a game
+     * @param {String} gameId 
+     * @param {WebSocket} socket 
+     */
     function joinGame(gameId, socket) {
         // Return false if the game does not exist
         if (game[gameId] == undefined) return false;
@@ -100,17 +121,8 @@ module.exports = (io) => {
         socket.on('host game', (cb) => {
             log(socket.id, `Host game request`);
             
-            // Generate a Game ID
-            var gId = rand.genereteRandomId(config.GAME_ID_LENGTH);
-            while (games[gId] != undefined) {
-                gId = rand.genereteRandomId(config.GAME_ID_LENGTH);
-            }
-
-            // Setup the game
-            games[gId] = {
-                users = {},
-                objects = []
-            };
+            // Create a game
+            var gId = createGame();
 
             // Join the game
             joinGame(gId);
