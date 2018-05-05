@@ -4,5 +4,6 @@
     "HTTPS": {
         "KEY_FILE": "[YOUR SSL KEY FILE PATH HERE]",
         "CERT_FILE": "[YOUR SSL CERT FILE PATH HERE]"
-    }
+    },
+    "GAME_ID_LENGTH": 5
 }
