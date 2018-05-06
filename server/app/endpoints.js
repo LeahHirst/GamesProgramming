@@ -150,19 +150,19 @@ module.exports = (io) => {
         /**
          * Updates a client's profile
          */
-        socket.on('update profile', (profile) => {
-            log(socket.id, `Profile update request. Name: ${profile.name}, Image: ${profile.imgUrl}`);
+        socket.on('update profile', (name, imgUrl) => {
+            log(socket.id, `Profile update request. Name: ${name}, Image: ${imgUrl}`);
             // Initialize a user if not seen before
             if (!users[socket.id]) {
                 users[socket.id] = {};
             }
             // Update user name
-            if (profile.name) {
-                users[socket.id].name = profile.name;
+            if (name) {
+                users[socket.id].name = name;
             }
             // Update user image
-            if (profile.imgUrl) {
-                users[socket.id].imgUrl = profile.imgUrl;
+            if (imgUrl) {
+                users[socket.id].imgUrl = imgUrl;
             }
         });
 
