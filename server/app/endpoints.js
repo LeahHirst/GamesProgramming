@@ -45,6 +45,15 @@ module.exports = (io) => {
     }
 
     /**
+     * Returns true if a given user is in a given game
+     * @param {WebSocket} socket 
+     * @param {String} gameId 
+     */
+    function isUserInGame(socket, gameId) {
+        return users[socket.id].gameId != undefined;
+    }
+
+    /**
      * Creates a new game instance and returns the ID
      */
     function createGame() {
@@ -72,12 +81,53 @@ module.exports = (io) => {
     function joinGame(gameId, socket) {
         // Return false if the game does not exist
         if (game[gameId] == undefined) return false;
+        if (isUserInGame()) return false;
+        // Check if the user has updated their profile
+        if (users[socket.id] == undefined) return false;
         // Join the room corrosponsind to the game ID
         socket.join(gameId);
         // Add the user to the room
         games[gameId].users[socket.id] = users[socket.id];
+        users[socket.id].gameId = gameId;
         return true;
     }
+
+    /**
+     * Removes a user from a game
+     * @param {WebSocket} socket 
+     */
+    function leaveGame(socket) {
+        // Find the game ID
+        var gameId = users[socket.id].gameId;
+        users[socket.id].gameId = undefined;
+        if (games[gameId] == undefined) return false;
+        games[gameId].users[socket.id] == undefined;
+    }
+
+    /**
+     * Emits a user list update to clients in a game
+     * @param {String} gameId 
+     * @param {String} reason 
+     */
+    function emitUserListUpdate(gameId, reason) {
+        var emittedBundle = {
+            users: [],
+            updateMessage: reason
+        }
+
+        // Populate the users array
+        if (games[gameId] != undefined) {
+            Object.keys(games[gameId].users).forEach(element => {
+                if (games[gameId].users[element] != undefined) {
+                    emittedBundle.users.push(games[gameId].users[element]);
+                }
+            });
+        }
+
+        io.to(gameId).emit('userlist update', emittedBundle);
+    }
+
+
 
     /**
      * Handler on a socket connection being a established
@@ -134,8 +184,10 @@ module.exports = (io) => {
         /**
          * Leave game request
          */
-        socket.on('leave game', () => {
+        socket.on('leave game', (cb) => {
             log(socket.id, `Game leave request`);
+
+            cb(leaveGame(socket));
         });
 
         /**
@@ -143,6 +195,7 @@ module.exports = (io) => {
          */
         socket.on('disconnect', () => {
             // TODO: Handle disconnect
+            leaveGame(socket);
         })
 
     }); 
