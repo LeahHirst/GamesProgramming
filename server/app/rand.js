@@ -7,11 +7,11 @@ module.exports = {
     genereteRandomId: function(length, charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") {
         var output = "";
 
-        if (typeof(length) != Number) throw new Error("Length must be a number");
+        if (typeof(length) != "number") throw new Error("Length must be a number");
         if (length <= 0) throw new Error ("Length must be more than zero");
 
         for (var i = 0; i < length; i++) {
-            output += output.charAt(Math.floor(Math.random() * output.length));
+            output += charset.charAt(Math.floor(Math.random() * charset.length));
         }
 
         return output;
