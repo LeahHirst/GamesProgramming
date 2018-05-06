@@ -14,7 +14,7 @@ import java.net.URISyntaxException;
  */
 public class Program {
 
-    private static final String GAME_SERVER_URI = "";
+    private static final String GAME_SERVER_URI = "http://192.168.0.17:3000";
 
     private static Socket mSocket;
 
@@ -34,18 +34,8 @@ public class Program {
         Program.givenName = givenName;
         Program.photoUrl = photoUrl;
 
-        if (mSocket == null) Program.establishConnection();
-
         // Inform the server of the update
         mSocket.emit("update profile", givenName, photoUrl);
-    }
-
-    private static void establishConnection() {
-        try {
-            mSocket = IO.socket(GAME_SERVER_URI);
-        } catch(URISyntaxException e) {}
-
-        mSocket.connect();
     }
 
     public static void init() {
@@ -55,6 +45,7 @@ public class Program {
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
+        mSocket.connect();
     }
 
 }
