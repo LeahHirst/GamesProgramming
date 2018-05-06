@@ -1,5 +1,17 @@
 module.exports = {
     /**
+     * Generates a random integer between min and max
+     * @param {Number} max
+     * @param {Number} min
+     */
+    generateRandomInt: function(max, min = 0) {
+        if (typeof(max) != "number") throw new Error("Max must be a number");
+        if (typeof(min) != "number") throw new Error("Min must be a number");
+        if (min >= max) throw new Error("Min must be less than max");
+
+        return Math.floor(Math.random() * (max - min + 1)) + min;
+    },
+    /**
      * Generates a random ID of a specific length with a charset
      * @param {Number} length
      * @param {String} charset
@@ -11,9 +23,22 @@ module.exports = {
         if (length <= 0) throw new Error ("Length must be more than zero");
 
         for (var i = 0; i < length; i++) {
-            output += charset.charAt(Math.floor(Math.random() * charset.length));
+            output += charset.charAt(generateRandomInt(charset.length));
         }
 
         return output;
+    },
+    /**
+     * Shuffles a given array
+     * @param {Array} array
+     */
+    shuffleArray: function(array) {
+        for (var i = 0; i < array.length - 2; i++) {
+            var swapIndex = generateRandomInt(array.length - 1, i);
+            var tmp = array[i];
+            array[i] = array[swapIndex];
+            array[swapIndex] = tmp;
+        }
+        return array;
     }
 }
