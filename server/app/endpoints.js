@@ -108,6 +108,7 @@ module.exports = (io) => {
      */
     function leaveGame(socket) {
         // Find the game ID
+        if (users[socket.id] == undefined) return false;
         var gameId = users[socket.id].gameId;
         users[socket.id].gameId = undefined;
         if (games[gameId] == undefined) return false;
@@ -197,7 +198,6 @@ module.exports = (io) => {
          */
         socket.on('leave game', (cb) => {
             log(socket.id, `Game leave request`);
-
             cb(leaveGame(socket));
         });
 
@@ -205,7 +205,7 @@ module.exports = (io) => {
          * Disconnection handler
          */
         socket.on('disconnect', () => {
-            // TODO: Handle disconnect
+            log(socket.id, `User disconnected`)
             leaveGame(socket);
         })
 
