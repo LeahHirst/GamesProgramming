@@ -33,8 +33,7 @@ module.exports = (io) => {
     function log(socId, message) {
         if (config.DEBUG_LOGGING) {
             // Get the user's name (if applicable)
-            var userName;
-            if (users[socId]) userName = users[socId].name;
+            var userName = getUserName(socId);
 
             // Get the ID label for the message
             var attr = socId + ((userName != undefined) ? " (" + userName + ")" : "");
@@ -42,6 +41,16 @@ module.exports = (io) => {
             // Log the message
             console.log(`[${attr}] ${message}`);
         }
+    }
+
+    /**
+     * Gets a user's name
+     * @param {String} socketId 
+     */
+    function getUserName(socketId) {
+        var userName;
+        if (users[socketId]) userName = users[socketId].name;
+        return userName;
     }
 
     /**
@@ -89,6 +98,7 @@ module.exports = (io) => {
         // Add the user to the room
         games[gameId].users[socket.id] = users[socket.id];
         users[socket.id].gameId = gameId;
+        emitUserListUpdate(gameId, `${getUserName(socket.id)} has joined the game`);
         return true;
     }
 
@@ -102,6 +112,7 @@ module.exports = (io) => {
         users[socket.id].gameId = undefined;
         if (games[gameId] == undefined) return false;
         games[gameId].users[socket.id] == undefined;
+        emitUserListUpdate(gameId, `${getUserName(socket.id)} has left the game`);
     }
 
     /**
