@@ -1,6 +1,7 @@
 // Import config
-const config  = require(process.env.DD_CONFIG || '/etc/dd_conf/config.json');
-const rand    = require('./rand');
+const config   = require(process.env.DD_CONFIG || '/etc/dd_conf/config.json');
+const rand     = require('./rand');
+const classify = require('./classify');
 
 // Export func
 module.exports = (io) => { 
@@ -192,6 +193,16 @@ module.exports = (io) => {
             // Return the game ID
             cb(gId);
         });
+
+        /**
+         * Classify object
+         */
+        socket.on('classify', (image, cb) => {
+            classify.classify(socket.id, image, (err, object) => {
+                if (err) return cb("Error");
+                cb(object);
+            })
+        })
 
         /**
          * Leave game request
