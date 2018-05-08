@@ -16,6 +16,8 @@ public class Program {
 
     private static final String GAME_SERVER_URI = "http://192.168.0.17:3000";
 
+    private static boolean initiated = false;
+
     private static Socket mSocket;
 
     public enum GameState {
@@ -38,14 +40,25 @@ public class Program {
         mSocket.emit("update profile", givenName, photoUrl);
     }
 
+    public static String getUserPhoto() {
+        return photoUrl;
+    }
+
+    public static String getUserName() {
+        return givenName;
+    }
+
     public static void init() {
-        // Try to initiate the WS connection
-        try {
-            mSocket = IO.socket(GAME_SERVER_URI);
-        } catch (URISyntaxException e) {
-            e.printStackTrace();
+        if (!initiated) {
+            // Try to initiate the WS connection
+            try {
+                mSocket = IO.socket(GAME_SERVER_URI);
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+            }
+            mSocket.connect();
+            initiated = true;
         }
-        mSocket.connect();
     }
 
 }
