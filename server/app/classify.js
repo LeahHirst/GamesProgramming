@@ -1,6 +1,4 @@
-import { CANCELLED } from 'dns';
-
-const exec = require('child_processes');
+const exec = require('child_process');
 const fs = require('fs');
 
 module.exports = {
