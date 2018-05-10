@@ -37,8 +37,11 @@ public class CameraActivity extends org.tensorflow.demo.CameraActivity implement
     CameraView mCameraView;
     Fragment mFragment;
 
+
     private static final android.util.Size DESIRED_PREVIEW_SIZE = new android.util.Size(720, 1280);
 
+
+    boolean paused;
     boolean pollCamera;
 
     private Bitmap rgbFrameBitmap = null;
@@ -58,26 +61,29 @@ public class CameraActivity extends org.tensorflow.demo.CameraActivity implement
         final Canvas canvas = new Canvas(croppedBitmap);
         canvas.drawBitmap(rgbFrameBitmap, frameToCropTransform, null);
 
-        runInBackground(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        final long startTime = SystemClock.uptimeMillis();
-                        if (Program.cameraPollListener != null) {
-                            final String result = Program.mClassifier.getMostLikely(croppedBitmap);
-                            Program.cameraPollListener.onObjectUpdate(result);
+        if (!paused) {
+            runInBackground(
+                    new Runnable() {
+                        @Override
+                        public void run() {
+                            final long startTime = SystemClock.uptimeMillis();
+                            if (Program.cameraPollListener != null) {
+                                final String result = Program.mClassifier.getMostLikely(croppedBitmap);
+                                Program.cameraPollListener.onObjectUpdate(result);
+                            }
+                            long endTime = SystemClock.uptimeMillis();
+                            while (endTime - startTime < Program.CAMERA_POLL_DURATION) {
+                                endTime = SystemClock.uptimeMillis();
+                                try {
+                                    Thread.sleep(100);
+                                } catch (Exception e) {
+                                }
+                            }
+                            requestRender();
+                            readyForNextImage();
                         }
-                        long endTime = SystemClock.uptimeMillis();
-                        while (endTime - startTime < Program.CAMERA_POLL_DURATION) {
-                            endTime = SystemClock.uptimeMillis();
-                            try {
-                                Thread.sleep(100);
-                            } catch (Exception e) {}
-                        }
-                        requestRender();
-                        readyForNextImage();
-                    }
-                });
+                    });
+        }
     }
 
     @Override
@@ -111,8 +117,17 @@ public class CameraActivity extends org.tensorflow.demo.CameraActivity implement
     }
 
     @Override
+    public synchronized void onResume() {
+        super.onResume();
+
+        paused = false;
+    }
+
+    @Override
     public synchronized void onPause() {
         Program.safeDiscconnect();
+
+        paused = true;
 
         super.onPause();
     }

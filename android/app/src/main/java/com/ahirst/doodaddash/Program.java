@@ -31,6 +31,13 @@ public class Program {
 
     public static CameraPollListener cameraPollListener;
 
+    public enum SignInMethod {
+        GOOGLE,
+        FACEBOOK,
+        TWITTER
+    }
+    public static SignInMethod signInMethod;
+
     public enum GameState {
         MENU,
         LOBBY,

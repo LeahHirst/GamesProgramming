@@ -243,11 +243,6 @@ public abstract class CameraActivity extends FragmentActivity
     public synchronized void onPause() {
         LOGGER.d("onPause " + this);
 
-        if (!isFinishing()) {
-            LOGGER.d("Requesting finish");
-            finish();
-        }
-
         handlerThread.quitSafely();
         try {
             handlerThread.join();
@@ -362,7 +357,6 @@ public abstract class CameraActivity extends FragmentActivity
         String cameraId = chooseCamera();
         if (cameraId == null) {
             Toast.makeText(this, "No Camera Detected", Toast.LENGTH_SHORT).show();
-            finish();
         }
 
         android.support.v4.app.Fragment fragment;
