@@ -195,16 +195,6 @@ module.exports = (io) => {
         });
 
         /**
-         * Classify object
-         */
-        socket.on('classify', (image, cb) => {
-            classify.classify(socket.id, image, (err, object) => {
-                if (err) return cb("Error");
-                cb(object);
-            })
-        })
-
-        /**
          * Leave game request
          */
         socket.on('leave game', (cb) => {
