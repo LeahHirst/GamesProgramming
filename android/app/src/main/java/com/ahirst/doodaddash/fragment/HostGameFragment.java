@@ -94,6 +94,14 @@ public class HostGameFragment extends Fragment {
             }
         });
 
+        btnStart.setClickable(true);
+        btnStart.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startGame();
+            }
+        });
+
         super.onActivityCreated(savedInstanceState);
     }
 
@@ -115,8 +123,13 @@ public class HostGameFragment extends Fragment {
 
     private void startGame() {
         if (Program.mSocket != null) {
-            // Start the game
+            Program.mSocket.emit("start pregame");
         }
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction ft = fragmentManager.beginTransaction();
+        ft.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left);
+        ft.replace(R.id.overlay_fragment, new PregameFragment());
+        ft.commit();
     }
 
     private void leaveGame() {
