@@ -7,9 +7,11 @@ package com.ahirst.doodaddash;
 import android.content.res.AssetManager;
 
 import com.ahirst.doodaddash.iface.CameraPollListener;
+import com.ahirst.doodaddash.model.Player;
 import com.ahirst.doodaddash.util.ImageClassifier;
 
 import java.net.URISyntaxException;
+import java.util.List;
 
 import io.socket.client.IO;
 import io.socket.client.Socket;
@@ -38,23 +40,33 @@ public class Program {
     };
     public static GameState currentState = GameState.MENU;
 
-    private static String givenName;
-    private static String photoUrl;
+
+    private static Player mProfile;
+    private static List<Player> mPlayers;
+
+    public static void updatePlayerList(List<Player> players) {
+        mPlayers = players;
+    }
+
+    public static List<Player> getPlayerList() {
+        return mPlayers;
+    }
 
     public static void updateProfile(String givenName, String photoUrl) {
-        Program.givenName = givenName;
-        Program.photoUrl = photoUrl;
+        mProfile = new Player();
+        mProfile.name = givenName;
+        mProfile.imgUrl = photoUrl;
 
         // Inform the server of the update
         mSocket.emit("update profile", givenName, photoUrl);
     }
 
     public static String getUserPhoto() {
-        return photoUrl;
+        return mProfile.imgUrl;
     }
 
     public static String getUserName() {
-        return givenName;
+        return mProfile.name;
     }
 
     public static void init(AssetManager assetManager) {
