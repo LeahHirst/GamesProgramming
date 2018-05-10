@@ -16,6 +16,9 @@ import android.util.TypedValue;
 import android.view.Window;
 import android.view.WindowManager;
 
+import com.ahirst.doodaddash.fragment.MainMenuFragment;
+import com.ahirst.doodaddash.fragment.MenuFragment;
+import com.ahirst.doodaddash.fragment.SignInFragment;
 import com.ahirst.doodaddash.util.CameraUtil;
 import com.otaliastudios.cameraview.CameraListener;
 import com.otaliastudios.cameraview.CameraUtils;
@@ -56,6 +59,15 @@ public class CameraActivity extends org.tensorflow.demo.CameraActivity implement
     private static final boolean MAINTAIN_ASPECT = true;
 
     @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        ft.replace(R.id.overlay_fragment, new MenuFragment());
+        ft.commit();
+    }
+
+    @Override
     protected void processImage() {
         rgbFrameBitmap.setPixels(getRgbBytes(), 0, previewWidth, 0, 0, previewWidth, previewHeight);
         final Canvas canvas = new Canvas(croppedBitmap);
@@ -69,7 +81,11 @@ public class CameraActivity extends org.tensorflow.demo.CameraActivity implement
                             final long startTime = SystemClock.uptimeMillis();
                             if (Program.cameraPollListener != null) {
                                 final String result = Program.mClassifier.getMostLikely(croppedBitmap);
-                                Program.cameraPollListener.onObjectUpdate(result);
+                                try {
+                                    Program.cameraPollListener.onObjectUpdate(result);
+                                } catch (Exception e) {}
+                                // Here we catch an exception in case cameraPollListener is set to
+                                // null during inference
                             }
                             long endTime = SystemClock.uptimeMillis();
                             while (endTime - startTime < Program.CAMERA_POLL_DURATION) {

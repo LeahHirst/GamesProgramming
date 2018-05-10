@@ -93,13 +93,14 @@
             android:layout_centerVertical="true"
             android:layout_centerHorizontal="true"
             android:layout_margin="20dp"
+            android:id="@+id/countdown_overlay"
+            android:visibility="invisible"
             android:rotation="-1">
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_margin="20dp"
-                android:orientation="vertical"
-                android:id="@+id/countdown_overlay">
+                android:orientation="vertical">
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"

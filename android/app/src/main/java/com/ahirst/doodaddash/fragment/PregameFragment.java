@@ -9,6 +9,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v7.widget.CardView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -20,6 +21,7 @@ import com.ahirst.doodaddash.iface.CameraPollListener;
 import com.ahirst.doodaddash.util.CameraUtil;
 
 import io.socket.client.Ack;
+import io.socket.emitter.Emitter;
 
 public class PregameFragment extends Fragment {
 
@@ -46,15 +48,28 @@ public class PregameFragment extends Fragment {
         mCountdownLabel = getView().findViewById(R.id.starting_in);
         mCountdownOverlay = getView().findViewById(R.id.countdown_overlay);
 
-        mCountdownOverlay.setVisibility(View.INVISIBLE);
+        if (Program.mSocket != null) {
+            Program.mSocket.on("start countdown", new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+                    mActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            startCountdown();
+                        }
+                    });
+                }
+            });
+        }
 
-        final View lockInButton = getView().findViewById(R.id.btn_lockin);
+        final CardView lockInButton = getView().findViewById(R.id.btn_lockin);
         lockInButton.setClickable(true);
         lockInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 // Lock In
                 final String selectedObject = mPredictionLabel.getText().toString();
+                Program.cameraPollListener = null;
 
                 // Tell the server
                 if (Program.mSocket != null) {
@@ -69,7 +84,7 @@ public class PregameFragment extends Fragment {
                         mPredictionDescriptionLabel.setText("Your object");
                         mStatusLabel.setText("Waiting for other players...");
                         lockInButton.setClickable(false);
-                        lockInButton.setBackgroundColor(getResources().getColor(R.color.buttonDisabled));
+                        lockInButton.setCardBackgroundColor(getResources().getColor(R.color.buttonDisabled));
                     }
                 });
             }
@@ -79,7 +94,7 @@ public class PregameFragment extends Fragment {
     }
 
     private void startCountdown() {
-        mCountdownOverlay.setVisibility(View.INVISIBLE);
+        mCountdownOverlay.setVisibility(View.VISIBLE);
 
         final Thread countdownThread = new Thread() {
 
@@ -109,15 +124,15 @@ public class PregameFragment extends Fragment {
                 }
             }
         };
-        countdownThread.run();
+        countdownThread.start();
     }
 
     private void transitionToInGame() {
-//        FragmentManager fragmentManager = getFragmentManager();
-//        FragmentTransaction ft = fragmentManager.beginTransaction();
-//        ft.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left);
-//        ft.replace(R.id.menu_fragment, fragment);
-//        ft.commit();
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction ft = fragmentManager.beginTransaction();
+        ft.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left);
+        ft.replace(R.id.overlay_fragment, new InGameFragment());
+        ft.commit();
     }
 
     @Override
@@ -140,7 +155,9 @@ public class PregameFragment extends Fragment {
                         @Override
                         public void run() {
 
-                            mPredictionLabel.setText(object);
+                            if (!lockedIn) {
+                                mPredictionLabel.setText(object);
+                            }
 
                         }
                     });
