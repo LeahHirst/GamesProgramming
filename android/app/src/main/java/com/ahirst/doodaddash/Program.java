@@ -20,7 +20,7 @@ import io.socket.client.Socket;
 public class Program {
 
     private static final String GAME_SERVER_URI = "http://10.201.246.14:3000";
-    public static final int CAMERA_POLL_DURATION = 3000;
+    public static final int CAMERA_POLL_DURATION = 500;
 
     private static boolean initiated = false;
 
@@ -71,6 +71,13 @@ public class Program {
             mClassifier = new ImageClassifier(assetManager);
 
             initiated = true;
+        }
+    }
+
+    public static void safeDiscconnect() {
+        if (mSocket != null) {
+            mSocket.disconnect();
+            mSocket = null;
         }
     }
 

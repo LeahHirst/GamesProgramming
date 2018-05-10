@@ -67,6 +67,13 @@ public class CameraActivity extends org.tensorflow.demo.CameraActivity implement
                             final String result = Program.mClassifier.getMostLikely(croppedBitmap);
                             Program.cameraPollListener.onObjectUpdate(result);
                         }
+                        long endTime = SystemClock.uptimeMillis();
+                        while (endTime - startTime < Program.CAMERA_POLL_DURATION) {
+                            endTime = SystemClock.uptimeMillis();
+                            try {
+                                Thread.sleep(100);
+                            } catch (Exception e) {}
+                        }
                         requestRender();
                         readyForNextImage();
                     }
@@ -101,5 +108,12 @@ public class CameraActivity extends org.tensorflow.demo.CameraActivity implement
     @Override
     protected int getLayoutId() {
         return R.layout.activity_camera_fragment;
+    }
+
+    @Override
+    public synchronized void onPause() {
+        Program.safeDiscconnect();
+
+        super.onPause();
     }
 }

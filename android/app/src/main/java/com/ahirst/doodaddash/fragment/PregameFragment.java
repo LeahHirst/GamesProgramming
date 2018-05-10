@@ -68,6 +68,8 @@ public class PregameFragment extends Fragment {
 
     @Override
     public void onPause() {
+        Program.cameraPollListener = null;
+
         super.onPause();
     }
 }
