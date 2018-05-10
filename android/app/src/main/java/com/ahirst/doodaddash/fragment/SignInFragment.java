@@ -15,6 +15,14 @@ import android.widget.TextView;
 import com.ahirst.doodaddash.CameraActivity;
 import com.ahirst.doodaddash.Program;
 import com.ahirst.doodaddash.R;
+import com.facebook.AccessToken;
+import com.facebook.CallbackManager;
+import com.facebook.FacebookCallback;
+import com.facebook.FacebookException;
+import com.facebook.Profile;
+import com.facebook.login.LoginManager;
+import com.facebook.login.LoginResult;
+import com.facebook.login.widget.LoginButton;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
@@ -23,12 +31,19 @@ import com.google.android.gms.common.SignInButton;
 import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.tasks.Task;
 
+import java.util.Arrays;
+
 public class SignInFragment extends Fragment {
 
     private int RC_GOOGLE = 0;
 
+    // Google
     private SignInButton mGoogleSignInButton;
     private GoogleSignInClient mGoogleSignInClient;
+
+    // Facebook
+    private LoginButton mFacebookSignInButton;
+    private CallbackManager mFacebookCallbackManager;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -37,12 +52,40 @@ public class SignInFragment extends Fragment {
 
     @Override
     public void onActivityCreated(Bundle savedInstanceState) {
+        // Google
         mGoogleSignInButton = getView().findViewById(R.id.google_signin_button);
         setGooglePlusButtonText(mGoogleSignInButton, "Continue with Google");
         mGoogleSignInButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 signInWithGoogle();
+            }
+        });
+
+        // Facebook
+        mFacebookCallbackManager = CallbackManager.Factory.create();
+        mFacebookSignInButton = getView().findViewById(R.id.facebook_signin_button);
+        mFacebookSignInButton.setReadPermissions(Arrays.asList("public_profile"));
+        mFacebookSignInButton.setFragment(this);
+        mFacebookSignInButton.registerCallback(mFacebookCallbackManager, new FacebookCallback<LoginResult>() {
+            @Override
+            public void onSuccess(LoginResult loginResult) {
+                // Set the profile
+                Profile profile = Profile.getCurrentProfile();
+                Program.updateProfile(profile.getFirstName(), profile.getProfilePictureUri(100, 100).toString());
+                Program.signInMethod = Program.SignInMethod.FACEBOOK;
+
+                showMainMenu();
+            }
+
+            @Override
+            public void onCancel() {
+
+            }
+
+            @Override
+            public void onError(FacebookException error) {
+                error.printStackTrace();
             }
         });
 
@@ -88,6 +131,7 @@ public class SignInFragment extends Fragment {
 
     @Override
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        mFacebookCallbackManager.onActivityResult(requestCode, resultCode, data);
         super.onActivityResult(requestCode, resultCode, data);
 
         if (requestCode == RC_GOOGLE) {
@@ -103,14 +147,26 @@ public class SignInFragment extends Fragment {
 
         Program.init(getActivity().getAssets());
 
-        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(getActivity());
-        if (account != null) {
-            // Google account detected!
-            String givenName = account.getGivenName();
-            android.net.Uri photo = account.getPhotoUrl();
+        GoogleSignInAccount gAccount = GoogleSignIn.getLastSignedInAccount(getActivity());
+        if (gAccount != null) {
+            // Google account detected
+            String givenName = gAccount.getGivenName();
+            android.net.Uri photo = gAccount.getPhotoUrl();
 
             Program.updateProfile(givenName, photo.toString());
             Program.signInMethod = Program.SignInMethod.GOOGLE;
+
+            showMainMenu();
+        }
+
+        AccessToken fbAccessToken = AccessToken.getCurrentAccessToken();
+        if (fbAccessToken != null && !fbAccessToken.isExpired()) {
+            // Facebook account detected
+            LoginManager.getInstance().logInWithReadPermissions(this, Arrays.asList("public_profile"));
+
+            Profile profile = Profile.getCurrentProfile();
+            Program.updateProfile(profile.getFirstName(), profile.getProfilePictureUri(100, 100).toString());
+            Program.signInMethod = Program.SignInMethod.FACEBOOK;
 
             showMainMenu();
         }
