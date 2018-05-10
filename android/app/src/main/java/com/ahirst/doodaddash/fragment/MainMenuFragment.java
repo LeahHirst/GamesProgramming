@@ -1,7 +1,6 @@
 package com.ahirst.doodaddash.fragment;
 
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -44,7 +43,7 @@ public class MainMenuFragment extends Fragment {
     public void openMenu(Fragment fragment) {
         FragmentManager fragmentManager = getFragmentManager();
         FragmentTransaction ft = fragmentManager.beginTransaction();
-        ft.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_from_left);
+        ft.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left);
         ft.replace(R.id.menu_fragment, fragment);
         ft.commit();
     }

@@ -37,6 +37,7 @@ dependencies {
         // excluding org.json which is provided by Android
         exclude group: 'org.json', module: 'json'
     }
+    implementation 'com.google.android:flexbox:0.3.2'
     implementation 'com.google.android.gms:play-services-auth:11.8.0'
     implementation 'com.github.apl-devs:appintro:v4.2.3'
     implementation 'com.squareup.picasso:picasso:2.71828'
