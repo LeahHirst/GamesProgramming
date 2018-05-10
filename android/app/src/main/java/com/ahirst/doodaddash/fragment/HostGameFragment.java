@@ -29,12 +29,17 @@ public class HostGameFragment extends Fragment {
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         mGamePinLabel = getView().findViewById(R.id.game_pin);
 
-        if (Program.mSocket != null) {
+        if (Program.mSocket != null && mActivity != null) {
             Program.mSocket.emit("host game", new Ack() {
                 @Override
-                public void call(Object... args) {
-                    String gamePin = (String) args[0];
-                    mGamePinLabel.setText(gamePin);
+                public void call(final Object... args) {
+                    mActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            String gamePin = (String) args[0];
+                            mGamePinLabel.setText(gamePin);
+                        }
+                    });
                 }
             });
         }
