@@ -198,7 +198,10 @@ module.exports = (io) => {
          */
         socket.on('leave game', (cb) => {
             log(socket.id, `Game leave request`);
-            cb(leaveGame(socket));
+            var res = leaveGame(socket);
+            if (cb != undefined) {
+                cb(res);
+            }
         });
 
         /**
