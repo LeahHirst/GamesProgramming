@@ -12,6 +12,7 @@ import android.widget.ImageView;
 
 import com.ahirst.doodaddash.Program;
 import com.ahirst.doodaddash.R;
+import com.facebook.login.LoginManager;
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.squareup.picasso.Picasso;
@@ -66,6 +67,9 @@ public class MainMenuFragment extends Fragment {
                         .requestProfile()
                         .build();
                 GoogleSignIn.getClient(getActivity(), gso).signOut();
+                break;
+            case FACEBOOK:
+                LoginManager.getInstance().logOut();
                 break;
         }
 

@@ -33,8 +33,7 @@ public class Program {
 
     public enum SignInMethod {
         GOOGLE,
-        FACEBOOK,
-        TWITTER
+        FACEBOOK
     }
     public static SignInMethod signInMethod;
 
@@ -65,7 +64,11 @@ public class Program {
         mProfile.imgUrl = photoUrl;
 
         // Inform the server of the update
-        mSocket.emit("update profile", givenName, photoUrl);
+        if (mSocket != null) {
+            mSocket.emit("update profile", mProfile.name, mProfile.imgUrl);
+        } else {
+            establishSocketConnection();
+        }
     }
 
     public static String getUserPhoto() {
@@ -74,6 +77,19 @@ public class Program {
 
     public static String getUserName() {
         return mProfile.name;
+    }
+
+    public static void establishSocketConnection() {
+        try {
+            mSocket = IO.socket(GAME_SERVER_URI);
+
+            if (mProfile != null) {
+                mSocket.emit("update profile", mProfile.name, mProfile.imgUrl);
+            }
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public static void init(AssetManager assetManager) {

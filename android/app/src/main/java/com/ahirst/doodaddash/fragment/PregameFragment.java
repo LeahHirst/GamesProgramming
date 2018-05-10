@@ -7,6 +7,8 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -23,6 +25,12 @@ public class PregameFragment extends Fragment {
 
     Activity mActivity;
     TextView mPredictionLabel;
+    TextView mPredictionDescriptionLabel;
+    TextView mStatusLabel;
+    TextView mCountdownLabel;
+    View mCountdownOverlay;
+
+    boolean lockedIn;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -33,8 +41,83 @@ public class PregameFragment extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         mPredictionLabel = getView().findViewById(R.id.prediction_label);
+        mPredictionDescriptionLabel = getView().findViewById(R.id.prediction_label_label);
+        mStatusLabel = getView().findViewById(R.id.status_label);
+        mCountdownLabel = getView().findViewById(R.id.starting_in);
+        mCountdownOverlay = getView().findViewById(R.id.countdown_overlay);
+
+        mCountdownOverlay.setVisibility(View.INVISIBLE);
+
+        final View lockInButton = getView().findViewById(R.id.btn_lockin);
+        lockInButton.setClickable(true);
+        lockInButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // Lock In
+                final String selectedObject = mPredictionLabel.getText().toString();
+
+                // Tell the server
+                if (Program.mSocket != null) {
+                    Program.mSocket.emit("set object", selectedObject);
+                }
+
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Update UI
+                        mPredictionLabel.setText(selectedObject);
+                        mPredictionDescriptionLabel.setText("Your object");
+                        mStatusLabel.setText("Waiting for other players...");
+                        lockInButton.setClickable(false);
+                        lockInButton.setBackgroundColor(getResources().getColor(R.color.buttonDisabled));
+                    }
+                });
+            }
+        });
 
         super.onActivityCreated(savedInstanceState);
+    }
+
+    private void startCountdown() {
+        mCountdownOverlay.setVisibility(View.INVISIBLE);
+
+        final Thread countdownThread = new Thread() {
+
+            boolean running = true;
+
+            int timer = 5;
+
+            @Override
+            public void run() {
+                while (running) {
+                    try {
+                        Thread.sleep(1000);
+                        timer--;
+                        mActivity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                mCountdownLabel.setText(Integer.toString(timer));
+                                if (timer == 0) {
+                                    running = false;
+                                    transitionToInGame();
+                                }
+                            }
+                        });
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        };
+        countdownThread.run();
+    }
+
+    private void transitionToInGame() {
+//        FragmentManager fragmentManager = getFragmentManager();
+//        FragmentTransaction ft = fragmentManager.beginTransaction();
+//        ft.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left);
+//        ft.replace(R.id.menu_fragment, fragment);
+//        ft.commit();
     }
 
     @Override
