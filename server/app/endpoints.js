@@ -1,7 +1,6 @@
 // Import config
 const config   = require(process.env.DD_CONFIG || '/etc/dd_conf/config.json');
 const rand     = require('./rand');
-const classify = require('./classify');
 
 // Export func
 module.exports = (io) => { 
@@ -90,8 +89,8 @@ module.exports = (io) => {
      */
     function joinGame(gameId, socket) {
         // Return false if the game does not exist
-        if (game[gameId] == undefined) return false;
-        if (isUserInGame()) return false;
+        if (games[gameId] == undefined) return false;
+        if (isUserInGame(socket, gameId)) return false;
         // Check if the user has updated their profile
         if (users[socket.id] == undefined) return false;
         // Join the room corrosponsind to the game ID
@@ -175,7 +174,7 @@ module.exports = (io) => {
             log(socket.id, `Game join request. Game ID: ${gameId}`);
             
             // Attempt to join the game
-            cb(joinGame(gameId));
+            cb(joinGame(gameId, socket));
         });
 
         /**
@@ -188,7 +187,7 @@ module.exports = (io) => {
             var gId = createGame();
 
             // Join the game
-            joinGame(gId);
+            joinGame(gId, socket);
 
             // Return the game ID
             cb(gId);
