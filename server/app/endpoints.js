@@ -129,8 +129,10 @@ module.exports = (io) => {
 
        if (games[gameId].objects.length == games[gameId].userCount) {
            // Game ready to begin
-           log(socket.id, "Starting countdown");
+           log(socket.id, 'Starting countdown');
            io.to(gameId).emit('start countdown');
+           // Shuffle items
+           games[gameId].objects = rand.shuffleArray(games[gameId].objects);
        }
     }
 
@@ -247,6 +249,14 @@ module.exports = (io) => {
          */
         socket.on('start pregame', () => {
             startPregame(socket);
+        });
+
+        /**
+         * Called when a user successfully detects an object
+         */
+        socket.on('item detected', (object) => {
+            // Verify that object is the correct object to avoid duplicated calls etc.
+            
         });
 
         /**
