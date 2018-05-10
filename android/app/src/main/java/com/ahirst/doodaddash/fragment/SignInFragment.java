@@ -78,6 +78,7 @@ public class SignInFragment extends Fragment {
             android.net.Uri photo = account.getPhotoUrl();
             // Update the profile
             Program.updateProfile(givenName, photo.toString());
+            Program.signInMethod = Program.SignInMethod.GOOGLE;
 
             showMainMenu();
         } catch (ApiException e) {
@@ -109,6 +110,7 @@ public class SignInFragment extends Fragment {
             android.net.Uri photo = account.getPhotoUrl();
 
             Program.updateProfile(givenName, photo.toString());
+            Program.signInMethod = Program.SignInMethod.GOOGLE;
 
             showMainMenu();
         }
