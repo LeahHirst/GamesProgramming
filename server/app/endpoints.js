@@ -75,7 +75,8 @@ module.exports = (io) => {
         // Setup the game
         games[gId] = {
             users: {},
-            objects: []
+            objects: [],
+            userCount: 0
         };
 
         // Return the ID
@@ -97,9 +98,49 @@ module.exports = (io) => {
         socket.join(gameId);
         // Add the user to the room
         games[gameId].users[socket.id] = users[socket.id];
+        games[gameId].userCount++;
         users[socket.id].gameId = gameId;
         emitUserListUpdate(gameId, `${getUserName(socket.id)} has joined the game`);
         return true;
+    }
+
+    /**
+     * Called when a host clicks start from the lobby
+     * @param {WebSocket} socket
+     */
+    function startPregame(socket) {
+        var gameId = getGame(socket);
+        if (gameId == undefined) return false;
+        io.to(gameId).emit('start pregame');
+    }
+
+    /**
+     * Called when a user locks in an object
+     * @param {WebSocket} socket
+     * @param {String} object
+     */
+    function setObject(socket, object) {
+       var gameId = getGame(socket);
+       log(socket.id, "Setting object to " + object + " (game id: " + gameId + ")");
+       if (gameId == undefined) return false;
+       if (games[gameId].users[socket.id].lockedIn) return false;
+       games[gameId].users[socket.id].lockedIn = true;
+       games[gameId].objects.push(object);
+
+       if (games[gameId].objects.length == games[gameId].userCount) {
+           // Game ready to begin
+           log(socket.id, "Starting countdown");
+           io.to(gameId).emit('start countdown');
+       }
+    }
+
+    /**
+     * Returns the game of a user
+     * @param {WebSocket} socket 
+     */
+    function getGame(socket) {
+        if (users[socket.id] == undefined) return undefined;
+        return users[socket.id].gameId;
     }
 
     /**
@@ -113,6 +154,7 @@ module.exports = (io) => {
         users[socket.id].gameId = undefined;
         if (games[gameId] == undefined) return false;
         games[gameId].users[socket.id] == undefined;
+        games[gameId].userCount--;
         emitUserListUpdate(gameId, `${getUserName(socket.id)} has left the game`);
     }
 
@@ -191,6 +233,20 @@ module.exports = (io) => {
 
             // Return the game ID
             cb(gId);
+        });
+
+        /**
+         * Set object request
+         */
+        socket.on('set object', (object) => {
+            setObject(socket, object);
+        });
+
+        /**
+         * Host start event
+         */
+        socket.on('start pregame', () => {
+            startPregame(socket);
         });
 
         /**
