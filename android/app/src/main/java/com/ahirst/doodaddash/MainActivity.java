@@ -68,7 +68,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             android.net.Uri photo = account.getPhotoUrl();
 
             Program.updateProfile(givenName, photo.toString());
-            Intent menuIntent = new Intent(this, MainMenuActivity.class);
+            Intent menuIntent = new Intent(this, CameraActivity.class);
             startActivity(menuIntent);
         } catch (ApiException e) {
             e.printStackTrace();
@@ -99,7 +99,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     protected void onStart() {
         super.onStart();
 
-        Program.init();
+        Program.init(getAssets());
 
         GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
         if (account != null) {
@@ -109,7 +109,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
             Program.updateProfile(givenName, photo.toString());
 
-            Intent menuIntent = new Intent(this, MainMenuActivity.class);
+            Intent menuIntent = new Intent(this, CameraActivity.class);
             startActivity(menuIntent);
         }
     }
