@@ -75,8 +75,12 @@ module.exports = (io) => {
         // Setup the game
         games[gId] = {
             users: {},
-            objects: [],
-            userCount: 0
+            objects: [
+                'laptop',
+                'monitor',
+                'pop bottle'
+            ],
+            userCount: 3
         };
 
         // Return the ID
@@ -126,14 +130,108 @@ module.exports = (io) => {
        if (games[gameId].users[socket.id].lockedIn) return false;
        games[gameId].users[socket.id].lockedIn = true;
        games[gameId].objects.push(object);
+       console.log(games[gameId].objects);
 
        if (games[gameId].objects.length == games[gameId].userCount) {
            // Game ready to begin
            log(socket.id, 'Starting countdown');
            io.to(gameId).emit('start countdown');
-           // Shuffle items
-           games[gameId].objects = rand.shuffleArray(games[gameId].objects);
+
+           setTimeout(() => { sendObjects(gameId); }, 5500);
        }
+    }
+
+    /**
+     * Send the first set of objects out to a room
+     */
+    function sendObjects(gameId) {
+        // Send out the objects
+        for (var i = 0; i < games[gameId].objects.length; i++) {
+            var user = io.sockets.connected[Object.keys(games[gameId].users)[i]];
+            if (user != undefined) {
+                log(user.id, "Sending item " + games[gameId].objects[i]);
+                games[gameId].users[user.id].score = 0;
+                games[gameId].users[user.id].objects = rand.shuffleArray(games[gameId].objects);
+    
+                user.emit('object request', games[gameId].users[user.id].objects[i]);
+                // Send out blank scoreboard
+                scoreboardUpdate(gameId);
+            }
+        }
+    }
+
+    function getNext(socket) {
+        var gameId = getGame(socket);
+        games[gameId].users[socket.id].score++;
+        scoreboardUpdate(gameId, socket);
+        if (games[gameId].users[socket.id].score >= games[gameId].objects.length) {
+            // User has won
+            return undefined;
+        } else {
+            return games[gameId].users[socket.id].objects[games[gameId].users[socket.id].score];
+        }
+    }
+
+    function scoreboardUpdate(gameId, socket) {
+
+        // Determine if one of the top three players have changed (i.e. if socket was one of them)
+        var users = Object.keys(games[gameId].users);
+        var top1 = { score: -1 };
+        var top2 = { score: -1 };
+        var top3 = { score: -1 };
+        for (var i = 0; i < users.length; i++) {
+            console.log('Checking user ' + users[i]);
+            if (games[gameId].users[users[i]] == undefined) continue;
+            var userScore = games[gameId].users[users[i]].score;
+            console.log(userScore);
+            if (top1.score < userScore) {
+                // Player is in first
+                top1.user = users[i];
+                top1.score = userScore;
+            } else if (top2.score < userScore) {
+                top2.user = users[i];
+                top2.score = userScore;
+            } else if (top3.score < userScore) {
+                top3.user = users[i];
+                top3.score = userScore;
+            }
+        }
+
+        if (socket == undefined) {
+            // Send scoreboard anyway
+            var bundle = {
+                users: []
+            };
+            var u1 = games[gameId].users[0];
+            if (u1 != undefined) bundle.users.push(u1);
+            var u2 = games[gameId].users[0];
+            if (u2 != undefined) bundle.users.push(u2);
+            var u3 = games[gameId].users[0];
+            if (u3 != undefined) bundle.users.push(u3);
+            io.to(gameId).emit('scoreboard update', bundle);
+        } else {
+            if (top1.user == socket.id || top2.user == socket.id || top3.user == socket.id) {
+                log(socket.id, "Updating scoreboard");
+                // Update the scoreboard
+                var bundle = {
+                    users: []
+                };
+                if (games[gameId].users[top1.user] != undefined) {
+                    top1.user = games[gameId].users[top1.user];
+                    bundle.users.push(top1.user);
+                }
+                if (games[gameId].users[top2.user] != undefined) {
+                    top2.user = games[gameId].users[top2.user];
+                    bundle.users.push(top2.user);
+                }
+                if (games[gameId].users[top3.user] != undefined) {
+                    top3.user = games[gameId].users[top3.user];
+                    bundle.users.push(top3.user);
+                }
+                io.to(gameId).emit('scoreboard update', bundle);
+            }
+        }
+        
     }
 
     /**
@@ -256,7 +354,18 @@ module.exports = (io) => {
          */
         socket.on('item detected', (object) => {
             // Verify that object is the correct object to avoid duplicated calls etc.
-            
+            var gameId = getGame(socket);
+            log(socket.id, "User guessed " + object);
+            if (games[gameId].users[socket.id].objects[games[gameId].users[socket.id].score] == object) {
+                // Success!
+                var next = getNext(socket);
+                if (next == undefined) {
+                    // TODO: User has won
+                    next = "WIN!"
+                } // else {
+                socket.emit('object request', next);
+                // }
+            }
         });
 
         /**
