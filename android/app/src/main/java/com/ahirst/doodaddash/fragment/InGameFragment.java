@@ -1,24 +1,43 @@
 package com.ahirst.doodaddash.fragment;
 
 import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ArgbEvaluator;
+import android.animation.ValueAnimator;
 import android.app.Activity;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.content.res.ResourcesCompat;
+import android.support.v7.widget.CardView;
+import android.transition.ArcMotion;
+import android.transition.ChangeBounds;
+import android.transition.Transition;
+import android.transition.TransitionManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.AccelerateInterpolator;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.ahirst.doodaddash.PlayerLabelView;
 import com.ahirst.doodaddash.Program;
 import com.ahirst.doodaddash.R;
 import com.ahirst.doodaddash.iface.CameraPollListener;
+import com.ahirst.doodaddash.model.Player;
 import com.ahirst.doodaddash.util.PlayerUtil;
+import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+
+import java.util.List;
 
 import io.socket.emitter.Emitter;
 
@@ -26,13 +45,24 @@ public class InGameFragment extends Fragment {
 
     private Activity mActivity;
 
+    private boolean isFirst = true;
+
     private LinearLayout mScoreboard;
     private TextView mTimeLabel;
     private TextView mCurrentObject;
     private TextView mPredictedObject;
+    private TextView mCurrentObjectAnim;
 
-    private View mCurrentContainer;
-    private View mPredictedContainer;
+    private boolean running = true;
+
+    private RelativeLayout mCurrentContainer;
+    private RelativeLayout mPredictedContainer;
+    private RelativeLayout mFooter;
+    private CardView mCurrentContainerAnimCard;
+
+    private int gameTimeLeft = Program.GAME_TIME;
+
+    private String currentObject;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
@@ -45,15 +75,35 @@ public class InGameFragment extends Fragment {
         mScoreboard = getView().findViewById(R.id.scoreboard);
         mTimeLabel = getView().findViewById(R.id.time_left);
         mCurrentObject = getView().findViewById(R.id.current_label);
+        mCurrentObjectAnim = getView().findViewById(R.id.current_label_anim);
         mPredictedObject = getView().findViewById(R.id.prediction_label);
-        mCurrentContainer = getView().findViewById(R.id.current_container);
+        mCurrentContainer = getView().findViewById(R.id.current_container_anim);
         mPredictedContainer = getView().findViewById(R.id.prediction_container);
+        mFooter = getView().findViewById(R.id.footer);
+        mCurrentContainerAnimCard = getView().findViewById(R.id.current_container_anim_card);
+        mCurrentContainer.setVisibility(View.INVISIBLE);
 
         if (Program.mSocket != null) {
-            Program.mSocket.on("next object", new Emitter.Listener() {
+            Program.mSocket.on("object request", new Emitter.Listener() {
                 @Override
                 public void call(Object... args) {
+                    final String newObject = (String) args[0];
+                    mActivity.runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            if (isFirst) {
+                                currentObject = newObject;
+                                mCurrentObject.setText(newObject);
+                                isFirst = false;
+                            } else {
+                                successAnimation(newObject);
+                                Player p = Program.getPlayer();
+                                p.score++;
+                                Program.setPlayer(p);
+                            }
 
+                        }
+                    });
                 }
             });
             Program.mSocket.on("scoreboard update", new Emitter.Listener() {
@@ -87,8 +137,16 @@ public class InGameFragment extends Fragment {
 
         Program.cameraPollListener = new CameraPollListener() {
             @Override
-            public void onObjectUpdate(String object) {
-                if (mCurrentObject.getText() == object) {
+            public void onObjectUpdate(final String object) {
+
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mPredictedObject.setText(object);
+                    }
+                });
+
+                if (currentObject.equalsIgnoreCase(object) && object != "") {
                     // Player has detected the object!
                     if (Program.mSocket != null) {
                         Program.mSocket.emit("item detected", object);
@@ -97,41 +155,135 @@ public class InGameFragment extends Fragment {
             }
         };
 
+        startTimer();
+
         super.onActivityCreated(savedInstanceState);
     }
 
-    private void successAnimation() {
-        if (mCurrentContainer != null && mPredictedContainer != null) {
-            float cX = mCurrentContainer.getX();
-            float cY = mCurrentContainer.getY();
-            float pX = mPredictedContainer.getX();
-            float pY = mPredictedContainer.getY();
-
-            mCurrentContainer.animate()
-                    .translationX((getView().getWidth() - mCurrentContainer.getWidth()) / 2)
-                    .translationY((getView().getHeight() - mPredictedContainer.getHeight()) / 2)
-                    .setInterpolator(new AccelerateDecelerateInterpolator())
-                    .setDuration(500)
-                    .setListener(new Animator.AnimatorListener() {
+    private void successAnimation(String newObject) {
+        if (mCurrentContainer != null && mPredictedContainer != null && mFooter != null) {
+            int white = Color.WHITE;
+            int black = Color.BLACK;
+            int green = ContextCompat.getColor(getContext(), R.color.successColor);
+            mCurrentContainer.setVisibility(View.VISIBLE);
+            mCurrentObjectAnim.setText(currentObject);
+            currentObject = newObject;
+            mCurrentObject.setText(newObject);
+            ValueAnimator cardColorAnim = ValueAnimator.ofObject(new ArgbEvaluator(), white, green);
+            cardColorAnim.setDuration(250);
+            cardColorAnim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(final ValueAnimator valueAnimator) {
+                    mCurrentContainerAnimCard.setCardBackgroundColor((int) valueAnimator.getAnimatedValue());
+                }
+            });
+            cardColorAnim.addListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animator) {
+                    // Start offscreen anim
+                    new Thread() {
                         @Override
-                        public void onAnimationStart(Animator animator) {}
+                        public void run() {
+                            try {
+                                Thread.sleep(1000);
+                            } catch (Exception e) {}
 
-                        @Override
-                        public void onAnimationEnd(Animator animator) {
-                            // Animation ended
-                            
+                            mActivity.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    final int dX = -(int)Math.floor((mCurrentContainer.getWidth()*1.5));
+                                    final int dY = -mCurrentContainer.getHeight();
+                                    final int dR = -90;
+                                    mCurrentContainer.animate()
+                                            .setInterpolator(new AccelerateInterpolator())
+                                            .setDuration(500)
+                                            .rotationBy(dR)
+                                            .xBy(dX)
+                                            .yBy(dY)
+                                            .setListener(new AnimatorListenerAdapter() {
+                                                @Override
+                                                public void onAnimationEnd(Animator animation) {
+                                                    mActivity.runOnUiThread(new Runnable() {
+                                                        @Override
+                                                        public void run() {
+                                                            mCurrentContainer.setVisibility(View.INVISIBLE);
+                                                            mCurrentContainer.clearAnimation();
+                                                            mCurrentContainer.setX(mCurrentContainer.getX()-dX);
+                                                            mCurrentContainer.setY(mCurrentContainer.getY()-dY);
+                                                            mCurrentContainer.setRotation(mCurrentContainer.getRotation()-dR);
+                                                            mCurrentContainerAnimCard.setCardBackgroundColor(Color.WHITE);
+                                                            mCurrentObjectAnim.setTextColor(Color.BLACK);
+                                                        }
+                                                    });
+                                                }
+                                            })
+                                            .start();
+
+                                }
+                            });
                         }
+                    }.start();
+                }
+            });
+            ValueAnimator textColorAnim = ValueAnimator.ofObject(new ArgbEvaluator(), black, white);
+            textColorAnim.setDuration(250);
+            textColorAnim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                    mCurrentObjectAnim.setTextColor((int) valueAnimator.getAnimatedValue());
+                }
+            });
 
-                        @Override
-                        public void onAnimationCancel(Animator animator) {}
-
-                        @Override
-                        public void onAnimationRepeat(Animator animator) {}
-                    });
+            cardColorAnim.start();
+            textColorAnim.start();
         }
     }
 
-    private void updateScoreboard() {
+    private void startTimer() {
+        new Thread() {
+            @Override
+            public void run() {
+                while (running) {
+                    try {
+                        Thread.sleep(1000);
+                        gameTimeLeft--;
+                        mActivity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                int minutes = (int) Math.floor(gameTimeLeft / 60);
+                                int seconds = gameTimeLeft % 60;
 
+                                String timeString = String.format("%01d:%02d", minutes, seconds);
+                                mTimeLabel.setText(timeString);
+                            }
+                        });
+                        if (gameTimeLeft == 0) {
+                            running = false;
+                        }
+                    } catch (Exception e) {}
+                }
+            }
+        }.start();
+    }
+
+    private void updateScoreboard() {
+        // TODO: Add changebounds transition
+        List<Player> players = Program.getPlayerList();
+        if (players != null) {
+            TransitionManager.beginDelayedTransition(mScoreboard, new ChangeBounds());
+            mScoreboard.removeAllViews();
+            boolean playerFeaturedInScore = false;
+            for (int i = 0; i < players.size(); i++) {
+                Player player = players.get(i);
+                if (player.imgUrl == Program.getUserPhoto()) playerFeaturedInScore = true;
+                if (i == 2 && !playerFeaturedInScore) {
+                    player = Program.getPlayer();
+                }
+                PlayerLabelView playerLabel = new PlayerLabelView(getContext());
+                Picasso.get().load(player.imgUrl).into(playerLabel.image);
+                playerLabel.text.setText(Integer.toString(player.score));
+                mScoreboard.addView(playerLabel);
+            }
+        }
     }
 }
