@@ -19,6 +19,8 @@ public class PlayerUtil {
                 Player player = new Player();
                 player.name = user.getString("name");
                 player.imgUrl = user.getString( "imgUrl");
+                if (user.has("score"))
+                    player.score = user.getInt("score");
                 playersList.add(player);
             }
 

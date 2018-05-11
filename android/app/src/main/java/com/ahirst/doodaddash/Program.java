@@ -21,8 +21,9 @@ import io.socket.client.Socket;
  */
 public class Program {
 
-    private static final String GAME_SERVER_URI = "http://192.168.1.112:3000";
+    private static final String GAME_SERVER_URI = "http://10.201.246.14:3000";
     public static final int CAMERA_POLL_DURATION = 500;
+    public static final int GAME_TIME = 180; // Seconds
 
     private static boolean initiated = false;
 
@@ -52,6 +53,14 @@ public class Program {
 
     public static void updatePlayerList(List<Player> players) {
         mPlayers = players;
+    }
+
+    public static Player getPlayer() {
+        return mProfile;
+    }
+
+    public static void setPlayer(Player player) {
+        mProfile = player;
     }
 
     public static List<Player> getPlayerList() {
