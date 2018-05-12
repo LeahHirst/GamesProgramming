@@ -14,9 +14,9 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.widget.CardView;
 import android.transition.ArcMotion;
-import android.transition.ChangeBounds;
+import com.transitionseverywhere.ChangeBounds;
 import android.transition.Transition;
-import android.transition.TransitionManager;
+import com.transitionseverywhere.TransitionManager;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,6 +33,7 @@ import com.ahirst.doodaddash.iface.CameraPollListener;
 import com.ahirst.doodaddash.model.Player;
 import com.ahirst.doodaddash.util.PlayerUtil;
 import com.squareup.picasso.Picasso;
+import com.transitionseverywhere.extra.Scale;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -46,6 +47,7 @@ public class InGameFragment extends Fragment {
     private Activity mActivity;
 
     private boolean isFirst = true;
+    private boolean skip = false;
 
     private LinearLayout mScoreboard;
     private TextView mTimeLabel;
@@ -56,6 +58,7 @@ public class InGameFragment extends Fragment {
     private boolean running = true;
 
     private RelativeLayout mCurrentContainer;
+    private RelativeLayout mCurrentContainerActual;
     private RelativeLayout mPredictedContainer;
     private RelativeLayout mFooter;
     private CardView mCurrentContainerAnimCard;
@@ -82,6 +85,21 @@ public class InGameFragment extends Fragment {
         mFooter = getView().findViewById(R.id.footer);
         mCurrentContainerAnimCard = getView().findViewById(R.id.current_container_anim_card);
         mCurrentContainer.setVisibility(View.INVISIBLE);
+        mCurrentContainerActual = getView().findViewById(R.id.current_container);
+
+        mCurrentContainerActual.setVisibility(View.INVISIBLE);
+
+        getView().setClickable(true);
+        getView().setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // Skip the current question
+                if (Program.mSocket != null) {
+                    skip = true;
+                    Program.mSocket.emit("skip");
+                }
+            }
+        });
 
         if (Program.mSocket != null) {
             Program.mSocket.on("object request", new Emitter.Listener() {
@@ -95,6 +113,11 @@ public class InGameFragment extends Fragment {
                                 currentObject = newObject;
                                 mCurrentObject.setText(newObject);
                                 isFirst = false;
+                                TransitionManager.beginDelayedTransition(mCurrentContainerActual, new Scale(0.7f).setDuration(500));
+                                mCurrentContainerActual.setVisibility(View.VISIBLE);
+                            } else if (skip) {
+                                skip = false;
+                                skipAnimation(newObject);
                             } else {
                                 successAnimation(newObject);
                                 Player p = Program.getPlayer();
@@ -161,13 +184,15 @@ public class InGameFragment extends Fragment {
     }
 
     private void successAnimation(String newObject) {
-        if (mCurrentContainer != null && mPredictedContainer != null && mFooter != null) {
+        if (mCurrentContainer != null) {
             int white = Color.WHITE;
             int black = Color.BLACK;
             int green = ContextCompat.getColor(getContext(), R.color.successColor);
             mCurrentContainer.setVisibility(View.VISIBLE);
+            mCurrentContainerActual.setVisibility(View.INVISIBLE);
             mCurrentObjectAnim.setText(currentObject);
             currentObject = newObject;
+            mCurrentContainer.bringToFront();
             mCurrentObject.setText(newObject);
             ValueAnimator cardColorAnim = ValueAnimator.ofObject(new ArgbEvaluator(), white, green);
             cardColorAnim.setDuration(250);
@@ -219,6 +244,8 @@ public class InGameFragment extends Fragment {
                                             })
                                             .start();
 
+                                    TransitionManager.beginDelayedTransition(mCurrentContainerActual, new Scale(0.7f).setDuration(500));
+                                    mCurrentContainerActual.setVisibility(View.VISIBLE);
                                 }
                             });
                         }
@@ -236,6 +263,69 @@ public class InGameFragment extends Fragment {
 
             cardColorAnim.start();
             textColorAnim.start();
+        }
+    }
+
+    private void skipAnimation(String newObject) {
+        if (mCurrentContainer != null) {
+            int white = Color.WHITE;
+            int black = Color.BLACK;
+            int orange = ContextCompat.getColor(getContext(), R.color.orange);
+
+            mCurrentContainer.setVisibility(View.VISIBLE);
+            mCurrentContainerActual.setVisibility(View.INVISIBLE);
+            mCurrentObjectAnim.setText(currentObject);
+            currentObject = newObject;
+            mCurrentObject.setText(newObject);
+            ValueAnimator cardColorAnim = ValueAnimator.ofObject(new ArgbEvaluator(), white, orange);
+            cardColorAnim.setDuration(250);
+            cardColorAnim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(final ValueAnimator valueAnimator) {
+                    mCurrentContainerAnimCard.setCardBackgroundColor((int) valueAnimator.getAnimatedValue());
+                }
+            });
+            ValueAnimator textColorAnim = ValueAnimator.ofObject(new ArgbEvaluator(), black, white);
+            textColorAnim.setDuration(250);
+            textColorAnim.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+                @Override
+                public void onAnimationUpdate(ValueAnimator valueAnimator) {
+                    mCurrentObjectAnim.setTextColor((int) valueAnimator.getAnimatedValue());
+                }
+            });
+            cardColorAnim.start();
+            textColorAnim.start();
+
+            final int dY = (int) (-mCurrentContainer.getHeight() * 1.2);
+            mCurrentContainer.bringToFront();
+            mCurrentContainer.animate()
+                    .setInterpolator(new AccelerateDecelerateInterpolator())
+                    .setDuration(500)
+                    .yBy(dY)
+                    .setListener(new AnimatorListenerAdapter() {
+                        @Override
+                        public void onAnimationEnd(Animator animation) {
+                            mCurrentContainerActual.bringToFront();
+                            mCurrentContainer.animate()
+                                    .setInterpolator(new AccelerateDecelerateInterpolator())
+                                    .setDuration(500)
+                                    .yBy(-dY)
+                                    .setListener(new AnimatorListenerAdapter() {
+                                        @Override
+                                        public void onAnimationEnd(Animator animation) {
+                                            mCurrentContainer.setVisibility(View.INVISIBLE);
+                                            mCurrentContainer.clearAnimation();
+                                            mCurrentContainerAnimCard.setCardBackgroundColor(Color.WHITE);
+                                            mCurrentObjectAnim.setTextColor(Color.BLACK);
+                                        }
+                                    }).start();
+                            TransitionManager.beginDelayedTransition(mCurrentContainer, new Scale(0.5f).setDuration(500));
+                            mCurrentContainer.setVisibility(View.INVISIBLE);
+                        }
+                    }).start();
+
+            TransitionManager.beginDelayedTransition(mCurrentContainerActual, new Scale(0.7f).setDuration(500));
+            mCurrentContainerActual.setVisibility(View.VISIBLE);
         }
     }
 
@@ -282,6 +372,7 @@ public class InGameFragment extends Fragment {
                 PlayerLabelView playerLabel = new PlayerLabelView(getContext());
                 Picasso.get().load(player.imgUrl).into(playerLabel.image);
                 playerLabel.text.setText(Integer.toString(player.score));
+                TransitionManager.setTransitionName(playerLabel, player.imgUrl);
                 mScoreboard.addView(playerLabel);
             }
         }
