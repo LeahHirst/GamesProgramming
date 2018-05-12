@@ -49,6 +49,14 @@ public class MainMenuFragment extends Fragment {
             }
         });
 
+        btnJoin.setClickable(true);
+        btnJoin.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                openMenu(new JoinGameFragment());
+            }
+        });
+
         super.onActivityCreated(savedInstanceState);
     }
 

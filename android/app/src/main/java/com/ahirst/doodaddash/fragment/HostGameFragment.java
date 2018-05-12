@@ -14,10 +14,13 @@ import android.widget.TextView;
 import com.ahirst.doodaddash.PlayerLabelView;
 import com.ahirst.doodaddash.Program;
 import com.ahirst.doodaddash.R;
+import com.ahirst.doodaddash.iface.SocketAction;
 import com.ahirst.doodaddash.model.Player;
 import com.ahirst.doodaddash.util.PlayerUtil;
 import com.google.android.flexbox.FlexboxLayout;
 import com.squareup.picasso.Picasso;
+import com.transitionseverywhere.ChangeBounds;
+import com.transitionseverywhere.TransitionManager;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -25,6 +28,7 @@ import org.json.JSONObject;
 import java.util.List;
 
 import io.socket.client.Ack;
+import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 
 public class HostGameFragment extends Fragment {
@@ -44,41 +48,46 @@ public class HostGameFragment extends Fragment {
         mGamePinLabel = getView().findViewById(R.id.game_pin);
         mPlayerList = getView().findViewById(R.id.player_list);
 
-        if (Program.mSocket != null && mActivity != null) {
-            // Ask the server for a game pin
-            Program.mSocket.emit("host game", new Ack() {
+        if (mActivity != null) {
+            Program.getSocket(new SocketAction() {
                 @Override
-                public void call(final Object... args) {
-                    mActivity.runOnUiThread(new Runnable() {
+                public void run(Socket socket) {
+                    // Ask the server for a game pin
+                    socket.emit("host game", new Ack() {
                         @Override
-                        public void run() {
-                            String gamePin = (String) args[0];
-                            mGamePinLabel.setText(gamePin);
+                        public void call(final Object... args) {
+                            mActivity.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    String gamePin = (String) args[0];
+                                    mGamePinLabel.setText(gamePin);
+                                }
+                            });
                         }
                     });
-                }
-            });
 
-            // Register the player update event
-            Program.mSocket.on("userlist update", new Emitter.Listener() {
-                @Override
-                public void call(Object... args) {
-                    JSONObject obj = (JSONObject) args[0];
+                    // Register the player update event
+                    socket.on("userlist update", new Emitter.Listener() {
+                        @Override
+                        public void call(Object... args) {
+                            JSONObject obj = (JSONObject) args[0];
 
-                    try {
-                        JSONArray users = obj.getJSONArray("users");
+                            try {
+                                JSONArray users = obj.getJSONArray("users");
 
-                        Program.updatePlayerList(PlayerUtil.parsePlayersFromJSON(users));
+                                Program.updatePlayerList(PlayerUtil.parsePlayersFromJSON(users));
 
-                        mActivity.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                updatePlayersUI();
+                                mActivity.runOnUiThread(new Runnable() {
+                                    @Override
+                                    public void run() {
+                                        updatePlayersUI();
+                                    }
+                                });
+                            } catch (Exception e) {
+                                e.printStackTrace();
                             }
-                        });
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
+                        }
+                    });
                 }
             });
         }
@@ -109,22 +118,30 @@ public class HostGameFragment extends Fragment {
         List<Player> players = Program.getPlayerList();
         if (mPlayerList != null && players != null && getContext() != null) {
             // Clear all current views
+            TransitionManager.beginDelayedTransition(mPlayerList, new ChangeBounds());
+
             mPlayerList.removeAllViews();
 
             // Add each view
             for (int i = 0; i < players.size(); i++) {
+                Player player = players.get(i);
                 PlayerLabelView label = new PlayerLabelView(getContext());
-                label.text.setText(players.get(i).name);
-                Picasso.get().load(players.get(i).imgUrl).into(label.image);
+                label.text.setText(player.name);
+                Picasso.get().load(player.imgUrl).into(label.image);
+                TransitionManager.setTransitionName(label, player.imgUrl);
                 mPlayerList.addView(label);
             }
         }
     }
 
     private void startGame() {
-        if (Program.mSocket != null) {
-            Program.mSocket.emit("start pregame");
-        }
+        Program.getSocket(new SocketAction() {
+            @Override
+            public void run(Socket socket) {
+                socket.emit("start pregame");
+            }
+        });
+
         FragmentManager fragmentManager = getFragmentManager();
         FragmentTransaction ft = fragmentManager.beginTransaction();
         ft.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left);
@@ -133,9 +150,14 @@ public class HostGameFragment extends Fragment {
     }
 
     private void leaveGame() {
-        if (Program.mSocket != null) {
-            Program.mSocket.emit("leave game");
-        }
+        Program.getSocket(new SocketAction() {
+            @Override
+            public void run(Socket socket) {
+                socket.emit("leave game");
+            }
+        });
+
+
         FragmentManager fragmentManager = getFragmentManager();
         FragmentTransaction ft = fragmentManager.beginTransaction();
         ft.setCustomAnimations(R.anim.enter_from_left, R.anim.exit_to_right);

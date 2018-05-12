@@ -14,6 +14,8 @@ import android.support.v4.content.ContextCompat;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.widget.CardView;
 import android.transition.ArcMotion;
+
+import com.ahirst.doodaddash.iface.SocketAction;
 import com.transitionseverywhere.ChangeBounds;
 import android.transition.Transition;
 import com.transitionseverywhere.TransitionManager;
@@ -40,6 +42,7 @@ import org.json.JSONObject;
 
 import java.util.List;
 
+import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 
 public class InGameFragment extends Fragment {
@@ -94,69 +97,77 @@ public class InGameFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 // Skip the current question
-                if (Program.mSocket != null) {
-                    skip = true;
-                    Program.mSocket.emit("skip");
-                }
+                Program.getSocket(new SocketAction() {
+                    @Override
+                    public void run(Socket socket) {
+                        socket.emit("skip");
+                    }
+                });
+
+                skip = true;
             }
         });
 
-        if (Program.mSocket != null) {
-            Program.mSocket.on("object request", new Emitter.Listener() {
-                @Override
-                public void call(Object... args) {
-                    final String newObject = (String) args[0];
-                    mActivity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (isFirst) {
-                                currentObject = newObject;
-                                mCurrentObject.setText(newObject);
-                                isFirst = false;
-                                TransitionManager.beginDelayedTransition(mCurrentContainerActual, new Scale(0.7f).setDuration(500));
-                                mCurrentContainerActual.setVisibility(View.VISIBLE);
-                            } else if (skip) {
-                                skip = false;
-                                skipAnimation(newObject);
-                            } else {
-                                successAnimation(newObject);
-                                Player p = Program.getPlayer();
-                                p.score++;
-                                Program.setPlayer(p);
-                            }
-
-                        }
-                    });
-                }
-            });
-            Program.mSocket.on("scoreboard update", new Emitter.Listener() {
-                @Override
-                public void call(Object... args) {
-                    JSONObject obj = (JSONObject) args[0];
-
-                    try {
-                        JSONArray users = obj.getJSONArray("users");
-
-                        Program.updatePlayerList(PlayerUtil.parsePlayersFromJSON(users));
-
+        Program.getSocket(new SocketAction() {
+            @Override
+            public void run(Socket socket) {
+                socket.on("object request", new Emitter.Listener() {
+                    @Override
+                    public void call(Object... args) {
+                        final String newObject = (String) args[0];
                         mActivity.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                updateScoreboard();
+                                if (isFirst) {
+                                    currentObject = newObject;
+                                    mCurrentObject.setText(newObject);
+                                    isFirst = false;
+                                    TransitionManager.beginDelayedTransition(mCurrentContainerActual,
+                                            new Scale(0.7f).setDuration(500));
+                                    mCurrentContainerActual.setVisibility(View.VISIBLE);
+                                } else if (skip) {
+                                    skip = false;
+                                    skipAnimation(newObject);
+                                } else {
+                                    successAnimation(newObject);
+                                    Player p = Program.getPlayer();
+                                    p.score++;
+                                    Program.setPlayer(p);
+                                }
+
                             }
                         });
-                    } catch (Exception e) {
-                        e.printStackTrace();
                     }
-                }
-            });
-            Program.mSocket.on("end game", new Emitter.Listener() {
-                @Override
-                public void call(Object... args) {
-                    // TODO: Handle endgame
-                }
-            });
-        }
+                });
+                socket.on("scoreboard update", new Emitter.Listener() {
+                    @Override
+                    public void call(Object... args) {
+                        JSONObject obj = (JSONObject) args[0];
+
+                        try {
+                            JSONArray users = obj.getJSONArray("users");
+
+                            Program.updatePlayerList(PlayerUtil.parsePlayersFromJSON(users));
+
+                            mActivity.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    updateScoreboard();
+                                }
+                            });
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                });
+                socket.on("end game", new Emitter.Listener() {
+                    @Override
+                    public void call(Object... args) {
+                        // TODO: Handle endgame
+                    }
+                });
+            }
+        });
 
         Program.cameraPollListener = new CameraPollListener() {
             @Override
@@ -171,9 +182,12 @@ public class InGameFragment extends Fragment {
 
                 if (currentObject.equalsIgnoreCase(object) && object != "") {
                     // Player has detected the object!
-                    if (Program.mSocket != null) {
-                        Program.mSocket.emit("item detected", object);
-                    }
+                    Program.getSocket(new SocketAction() {
+                        @Override
+                        public void run(Socket socket) {
+                            socket.emit("item detected", object);
+                        }
+                    });
                 }
             }
         };
@@ -357,7 +371,6 @@ public class InGameFragment extends Fragment {
     }
 
     private void updateScoreboard() {
-        // TODO: Add changebounds transition
         List<Player> players = Program.getPlayerList();
         if (players != null) {
             TransitionManager.beginDelayedTransition(mScoreboard, new ChangeBounds());

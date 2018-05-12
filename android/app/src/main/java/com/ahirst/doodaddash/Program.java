@@ -7,6 +7,8 @@ package com.ahirst.doodaddash;
 import android.content.res.AssetManager;
 
 import com.ahirst.doodaddash.iface.CameraPollListener;
+import com.ahirst.doodaddash.iface.SocketAction;
+import com.ahirst.doodaddash.model.GameState;
 import com.ahirst.doodaddash.model.Player;
 import com.ahirst.doodaddash.util.ImageClassifier;
 
@@ -15,20 +17,23 @@ import java.util.List;
 
 import io.socket.client.IO;
 import io.socket.client.Socket;
+import io.socket.emitter.Emitter;
 
 /**
  * Program class saves the game state
  */
 public class Program {
 
+    // Game options
     private static final String GAME_SERVER_URI = "http://192.168.0.17:3000";
     public static final int CAMERA_POLL_DURATION = 500;
     public static final int GAME_TIME = 180; // Seconds
 
     private static boolean initiated = false;
 
-    public static Socket mSocket;
+    private static Socket mSocket;
     public static ImageClassifier mClassifier;
+    private static GameState mGameState;
 
     public static CameraPollListener cameraPollListener;
 
@@ -37,16 +42,6 @@ public class Program {
         FACEBOOK
     }
     public static SignInMethod signInMethod;
-
-    public enum GameState {
-        MENU,
-        LOBBY,
-        PRE_GAME,
-        GAME,
-        POST_GAME
-    };
-    public static GameState currentState = GameState.MENU;
-
 
     private static Player mProfile;
     private static List<Player> mPlayers;
@@ -99,6 +94,20 @@ public class Program {
             e.printStackTrace();
         }
 
+    }
+
+    public static void getSocket(final SocketAction action) {
+        if (mSocket == null) {
+            establishSocketConnection();
+            mSocket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
+                @Override
+                public void call(Object... args) {
+                    action.run(mSocket);
+                }
+            });
+        } else {
+            action.run(mSocket);
+        }
     }
 
     public static void init(AssetManager assetManager) {
