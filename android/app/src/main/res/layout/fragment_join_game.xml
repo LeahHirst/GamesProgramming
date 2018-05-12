@@ -4,16 +4,17 @@
     android:layout_height="match_parent">
 
     <!-- Header -->
-    <LinearLayout
+    <RelativeLayout
+        android:id="@+id/header"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:id="@+id/header">
+        android:layout_height="match_parent"
+        android:layout_above="@id/footer">
 
         <android.support.v7.widget.CardView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
+            android:layout_centerVertical="true"
+            android:layout_centerHorizontal="true"
             android:rotation="-1">
 
             <LinearLayout
@@ -28,53 +29,19 @@
                     android:layout_gravity="center"
                     android:text="Game pin" />
 
-                <TextView
+                <EditText
                     android:id="@+id/game_pin"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Loading"
+                    android:hint="Enter pin"
                     android:textColor="@android:color/black"
-                    android:textSize="20dp" />
+                    android:textSize="20dp"
+                    android:inputType="number" />
             </LinearLayout>
         </android.support.v7.widget.CardView>
-    </LinearLayout>
+    </RelativeLayout>
 
     <!-- Main content -->
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_above="@id/footer"
-        android:layout_below="@id/header"
-        android:orientation="vertical">
-
-        <android.support.v7.widget.CardView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:layout_marginTop="20dp"
-            android:rotation="-1">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_margin="10dp"
-                android:text="Players"
-                android:textColor="@android:color/black" />
-        </android.support.v7.widget.CardView>
-
-        <com.google.android.flexbox.FlexboxLayout
-            xmlns:android="http://schemas.android.com/apk/res/android"
-            xmlns:app="http://schemas.android.com/apk/res-auto"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            app:flexWrap="wrap"
-            app:alignItems="flex_start"
-            app:alignContent="flex_start"
-            android:layout_margin="20dp"
-            android:id="@+id/player_list">
-
-        </com.google.android.flexbox.FlexboxLayout>
-    </LinearLayout>
     <!-- Footer -->
     <RelativeLayout
         android:id="@+id/footer"
@@ -85,21 +52,22 @@
         <android.support.v7.widget.CardView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
             android:layout_margin="20dp"
-            android:id="@+id/btn_leave"
+            android:id="@+id/btn_cancel"
+            android:clickable="true"
             android:rotation="-1">
-
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="20dp"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:layout_margin="10dp">
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center"
-                    android:text="Leave game"
+                    android:text="Cancel"
                     android:textColor="@android:color/black"
                     android:textSize="16dp" />
             </LinearLayout>
@@ -110,18 +78,20 @@
             android:layout_height="wrap_content"
             android:layout_alignParentRight="true"
             android:layout_margin="20dp"
-            android:id="@+id/btn_start"
+            android:id="@+id/btn_join"
+            android:clickable="true"
             android:rotation="-1">
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:layout_margin="20dp">
+                android:layout_margin="10dp">
+
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Start game"
                     android:layout_gravity="center"
+                    android:text="Join game"
                     android:textColor="@android:color/black"
                     android:textSize="16dp" />
             </LinearLayout>

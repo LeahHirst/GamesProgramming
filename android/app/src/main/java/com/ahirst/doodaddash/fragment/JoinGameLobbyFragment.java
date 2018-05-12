@@ -2,6 +2,7 @@ package com.ahirst.doodaddash.fragment;
 
 import android.app.Activity;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -27,91 +28,87 @@ import org.json.JSONObject;
 
 import java.util.List;
 
-import io.socket.client.Ack;
 import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 
-public class HostGameFragment extends Fragment {
+public class JoinGameLobbyFragment extends Fragment {
 
     Activity mActivity;
     TextView mGamePinLabel;
     FlexboxLayout mPlayerList;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView( LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         mActivity = getActivity();
-        return inflater.inflate(R.layout.fragment_host_game, container, false);
+        return inflater.inflate(R.layout.fragment_join_lobby, container, false);
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+    public void onActivityCreated(Bundle savedInstanceState) {
         mGamePinLabel = getView().findViewById(R.id.game_pin);
         mPlayerList = getView().findViewById(R.id.player_list);
 
-        if (mActivity != null) {
-            Program.getSocket(new SocketAction() {
-                @Override
-                public void run(Socket socket) {
-                    // Ask the server for a game pin
-                    socket.emit("host game", new Ack() {
-                        @Override
-                        public void call(final Object... args) {
+        Program.getSocket(new SocketAction() {
+            @Override
+            public void run(Socket socket) {
+                socket.on("userlist update", new Emitter.Listener() {
+                    @Override
+                    public void call(Object... args) {
+                        JSONObject obj = (JSONObject) args[0];
+
+                        try {
+                            JSONArray users = obj.getJSONArray("users");
+
+                            Program.updatePlayerList(PlayerUtil.parsePlayersFromJSON(users));
+
                             mActivity.runOnUiThread(new Runnable() {
                                 @Override
                                 public void run() {
-                                    String gamePin = (String) args[0];
-                                    mGamePinLabel.setText(gamePin);
+                                    updatePlayersUI();
                                 }
                             });
+                        } catch (Exception e) {
+                            e.printStackTrace();
                         }
-                    });
+                    }
+                });
 
-                    // Register the player update event
-                    socket.on("userlist update", new Emitter.Listener() {
-                        @Override
-                        public void call(Object... args) {
-                            JSONObject obj = (JSONObject) args[0];
-
-                            try {
-                                JSONArray users = obj.getJSONArray("users");
-
-                                Program.updatePlayerList(PlayerUtil.parsePlayersFromJSON(users));
-
-                                mActivity.runOnUiThread(new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        updatePlayersUI();
-                                    }
-                                });
-                            } catch (Exception e) {
-                                e.printStackTrace();
+                socket.on("start pregame", new Emitter.Listener() {
+                    @Override
+                    public void call(Object... args) {
+                        mActivity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                startGame();
                             }
-                        }
-                    });
-                }
-            });
-        }
-
-        View btnLeave = getView().findViewById(R.id.btn_leave);
-        View btnStart = getView().findViewById(R.id.btn_start);
-
-        btnLeave.setClickable(true);
-        btnLeave.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                leaveGame();
+                        });
+                    }
+                });
             }
         });
 
-        btnStart.setClickable(true);
-        btnStart.setOnClickListener(new View.OnClickListener() {
+        View btnLeave = getView().findViewById(R.id.btn_leave);
+        btnLeave.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startGame();
+                mActivity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        leaveGame();
+                    }
+                });
             }
         });
 
         super.onActivityCreated(savedInstanceState);
+    }
+
+    private void startGame() {
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction ft = fragmentManager.beginTransaction();
+        ft.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left);
+        ft.replace(R.id.overlay_fragment, new PregameFragment());
+        ft.commit();
     }
 
     private void updatePlayersUI() {
@@ -134,21 +131,6 @@ public class HostGameFragment extends Fragment {
         }
     }
 
-    private void startGame() {
-        Program.getSocket(new SocketAction() {
-            @Override
-            public void run(Socket socket) {
-                socket.emit("start pregame");
-            }
-        });
-
-        FragmentManager fragmentManager = getFragmentManager();
-        FragmentTransaction ft = fragmentManager.beginTransaction();
-        ft.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left);
-        ft.replace(R.id.overlay_fragment, new PregameFragment());
-        ft.commit();
-    }
-
     private void leaveGame() {
         Program.getSocket(new SocketAction() {
             @Override
@@ -157,12 +139,10 @@ public class HostGameFragment extends Fragment {
             }
         });
 
-
         FragmentManager fragmentManager = getFragmentManager();
         FragmentTransaction ft = fragmentManager.beginTransaction();
         ft.setCustomAnimations(R.anim.enter_from_left, R.anim.exit_to_right);
         ft.replace(R.id.menu_fragment, new MainMenuFragment());
         ft.commit();
     }
-
 }

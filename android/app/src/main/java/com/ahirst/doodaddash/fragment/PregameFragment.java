@@ -3,12 +3,14 @@ package com.ahirst.doodaddash.fragment;
 import android.app.Activity;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.CardView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -18,9 +20,14 @@ import android.widget.TextView;
 import com.ahirst.doodaddash.Program;
 import com.ahirst.doodaddash.R;
 import com.ahirst.doodaddash.iface.CameraPollListener;
+import com.ahirst.doodaddash.iface.SocketAction;
 import com.ahirst.doodaddash.util.CameraUtil;
+import com.transitionseverywhere.Fade;
+import com.transitionseverywhere.Recolor;
+import com.transitionseverywhere.TransitionSet;
 
 import io.socket.client.Ack;
+import io.socket.client.Socket;
 import io.socket.emitter.Emitter;
 
 public class PregameFragment extends Fragment {
@@ -31,6 +38,7 @@ public class PregameFragment extends Fragment {
     TextView mStatusLabel;
     TextView mCountdownLabel;
     View mCountdownOverlay;
+    CardView mLockInButton;
 
     boolean lockedIn;
 
@@ -48,49 +56,83 @@ public class PregameFragment extends Fragment {
         mCountdownLabel = getView().findViewById(R.id.starting_in);
         mCountdownOverlay = getView().findViewById(R.id.countdown_overlay);
 
-        if (Program.mSocket != null) {
-            Program.mSocket.on("start countdown", new Emitter.Listener() {
-                @Override
-                public void call(Object... args) {
-                    mActivity.runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            startCountdown();
-                        }
-                    });
-                }
-            });
-        }
-
-        final CardView lockInButton = getView().findViewById(R.id.btn_lockin);
-        lockInButton.setClickable(true);
-        lockInButton.setOnClickListener(new View.OnClickListener() {
+        Program.getSocket(new SocketAction() {
             @Override
-            public void onClick(View view) {
-                // Lock In
-                final String selectedObject = mPredictionLabel.getText().toString();
-                Program.cameraPollListener = null;
+            public void run(Socket socket) {
 
-                // Tell the server
-                if (Program.mSocket != null) {
-                    Program.mSocket.emit("set object", selectedObject);
-                }
-
-                mActivity.runOnUiThread(new Runnable() {
+                socket.on("start countdown", new Emitter.Listener() {
                     @Override
-                    public void run() {
-                        // Update UI
-                        mPredictionLabel.setText(selectedObject);
-                        mPredictionDescriptionLabel.setText("Your object");
-                        mStatusLabel.setText("Waiting for other players...");
-                        lockInButton.setClickable(false);
-                        lockInButton.setCardBackgroundColor(getResources().getColor(R.color.buttonDisabled));
+                    public void call(Object... args) {
+                        mActivity.runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                startCountdown();
+                            }
+                        });
                     }
                 });
             }
         });
 
+        mLockInButton = getView().findViewById(R.id.btn_lockin);
+        mLockInButton.setClickable(true);
+        mLockInButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                // Lock In
+                lockIn();
+            }
+        });
+
         super.onActivityCreated(savedInstanceState);
+    }
+
+    private void setLockInDisabled(boolean state) {
+        mLockInButton.setClickable(!state);
+        if (state) {
+            // Disabled
+
+
+            int white = Color.WHITE;
+            int black = Color.BLACK;
+
+        } else {
+            // Enabled
+            int white = Color.WHITE;
+            int black = Color.BLACK;
+        }
+    }
+
+    private void lockIn() {
+        if (!lockedIn) {
+            final String selectedObject = mPredictionLabel.getText().toString();
+
+            if (selectedObject == "") return;
+
+            TransitionSet ts = new TransitionSet()
+                    .addTransition(new Recolor())
+                    .addTransition(new Fade());
+
+            Program.cameraPollListener = null;
+
+            // Tell the server
+            Program.getSocket(new SocketAction() {
+                @Override
+                public void run(Socket socket) {
+                    socket.emit("set object", selectedObject);
+                }
+            });
+
+            mPredictionLabel.setText(selectedObject);
+            mPredictionDescriptionLabel.setText("Your object");
+            mStatusLabel.setText("Waiting for other players...");
+            mLockInButton.setClickable(false);
+            mLockInButton.setCardBackgroundColor(getResources().getColor(R.color.buttonDisabled));
+
+            int white = Color.WHITE;
+            int black = Color.BLACK;
+            int orange = ContextCompat.getColor(getContext(), R.color.orange);
+        }
     }
 
     private void startCountdown() {
