@@ -42,6 +42,7 @@ dependencies {
     implementation 'com.google.android:flexbox:0.3.2'
     implementation 'com.google.android.gms:play-services-auth:11.8.0'
     implementation 'com.facebook.android:facebook-login:[4,5)'
+    implementation 'com.andkulikov:transitionseverywhere:1.7.9'
     implementation 'com.github.apl-devs:appintro:v4.2.3'
     implementation 'com.squareup.picasso:picasso:2.71828'
     implementation 'com.otaliastudios:cameraview:1.5.0'
