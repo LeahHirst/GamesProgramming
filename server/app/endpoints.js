@@ -2,6 +2,16 @@
 const config   = require(process.env.DD_CONFIG || '/etc/dd_conf/config.json');
 const rand     = require('./rand');
 
+Array.prototype.clean = function(deleteValue) {
+    for (var i = 0; i < this.length; i++) {
+        if (this[i] == deleteValue) {         
+            this.splice(i, 1);
+            i--;
+        }
+    }
+    return this;
+};
+
 // Export func
 module.exports = (io) => { 
 
@@ -64,6 +74,7 @@ module.exports = (io) => {
      * @param {String} gameId 
      */
     function isUserInGame(socket, gameId) {
+        if (users[socket.id] == undefined) return false;
         return users[socket.id].gameId != undefined;
     }
 
@@ -153,8 +164,6 @@ module.exports = (io) => {
        games[gameId].users[socket.id].lockedIn = true;
        games[gameId].objects.push(object);
 
-       console.log(JSON.stringify(games));
-
        if (games[gameId].objects.length == games[gameId].userCount) {
            // Game ready to begin
            log(socket.id, 'Starting countdown');
@@ -175,7 +184,7 @@ module.exports = (io) => {
                 var object = games[gameId].objects[i];
                 games[gameId].users[user.id].score = 0;
 
-                var objects = rand.shuffleArray(games[gameId].objects).slice();
+                var objects = JSON.parse(JSON.stringify(rand.shuffleArray(games[gameId].objects)));
                 
                 // Swap the first item with the starting object
                 var swapIndex = objects.indexOf(object);
@@ -184,14 +193,20 @@ module.exports = (io) => {
                 objects[swapIndex] = tmp;
 
                 games[gameId].users[user.id].objects = objects;
-
-                console.log(JSON.stringify(games[gameId].users));
                 
                 user.emit('object request', object);
             }
         }
-        console.log(JSON.stringify(games));
         io.to(gameId).emit('scoreboard update', { users: [] });
+
+        setTimeout(() => {
+            if (games[gameId] != undefined) {
+                io.to(gameId).emit('end game', {
+                    users: getTopN(gameId, 3)
+                });
+                deleteGame(gameId);
+            }
+        }, 1000 * 60 * 3);
     }
 
     function getCurrent(socket) {
@@ -225,7 +240,6 @@ module.exports = (io) => {
         // Holder for top n players
         var top = [];
 
-        console.log(users);
         // Iterate through users in game
         for (var i = 0; i < users.length; i++) {
             var user = games[gameId].users[users[i]];
@@ -242,8 +256,8 @@ module.exports = (io) => {
                 }
             }
         }
-    
-        return top;
+        
+        return top.clean(null);
     }
 
     /**
