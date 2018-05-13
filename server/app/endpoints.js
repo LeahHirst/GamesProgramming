@@ -35,8 +35,13 @@ module.exports = (io) => {
             // Get the user's name (if applicable)
             var userName = getUserName(socId);
 
+            var gameId = '';
+
+            if (users[socId] != undefined)
+                gameId = users[socId].gameId;
+
             // Get the ID label for the message
-            var attr = socId + ((userName != undefined) ? " (" + userName + ")" : "");
+            var attr = socId + ((userName != undefined) ? " (" + userName + " [" + gameId + "])" : "");
 
             // Log the message
             console.log(`[${attr}] ${message}`);
@@ -75,12 +80,8 @@ module.exports = (io) => {
         // Setup the game
         games[gId] = {
             users: {},
-            objects: [
-                'laptop',
-                'monitor',
-                'pop bottle'
-            ],
-            userCount: 3
+            objects: [],
+            userCount: 0
         };
 
         // Return the ID
@@ -101,10 +102,14 @@ module.exports = (io) => {
         // Join the room corrosponsind to the game ID
         socket.join(gameId);
         // Add the user to the room
-        games[gameId].users[socket.id] = users[socket.id];
+        games[gameId].users[socket.id] = JSON.parse(JSON.stringify(users[socket.id]));
         games[gameId].userCount++;
         users[socket.id].gameId = gameId;
-        emitUserListUpdate(gameId, `${getUserName(socket.id)} has joined the game`);
+        
+        setTimeout(() => {
+            emitUserListUpdate(gameId, `${getUserName(socket.id)} has joined the game`);
+        }, 1000);
+        
         return true;
     }
 
@@ -119,6 +124,23 @@ module.exports = (io) => {
     }
 
     /**
+     * Skips an object
+     * @param {WebSocket} socket 
+     */
+    function skip(socket) {
+        var gameId = getGame(socket);
+        if (gameId == undefined) return false;
+
+        var currentObject = getCurrent(socket);
+        games[gameId].users[socket.id].objects
+            .splice(games[gameId].users[socket.id].score, 1);
+        games[gameId].users[socket.id].objects.push(currentObject);
+
+        currentObject = getCurrent(socket);
+        socket.emit('object request', currentObject);
+    }
+
+    /**
      * Called when a user locks in an object
      * @param {WebSocket} socket
      * @param {String} object
@@ -130,7 +152,8 @@ module.exports = (io) => {
        if (games[gameId].users[socket.id].lockedIn) return false;
        games[gameId].users[socket.id].lockedIn = true;
        games[gameId].objects.push(object);
-       console.log(games[gameId].objects);
+
+       console.log(JSON.stringify(games));
 
        if (games[gameId].objects.length == games[gameId].userCount) {
            // Game ready to begin
@@ -149,21 +172,31 @@ module.exports = (io) => {
         for (var i = 0; i < games[gameId].objects.length; i++) {
             var user = io.sockets.connected[Object.keys(games[gameId].users)[i]];
             if (user != undefined) {
-                log(user.id, "Sending item " + games[gameId].objects[i]);
+                var object = games[gameId].objects[i];
                 games[gameId].users[user.id].score = 0;
-                games[gameId].users[user.id].objects = rand.shuffleArray(games[gameId].objects);
-    
-                user.emit('object request', games[gameId].users[user.id].objects[i]);
-                // Send out blank scoreboard
-                scoreboardUpdate(gameId);
+
+                var objects = rand.shuffleArray(games[gameId].objects).slice();
+                
+                // Swap the first item with the starting object
+                var swapIndex = objects.indexOf(object);
+                var tmp = objects[0];
+                objects[0] = objects[swapIndex];
+                objects[swapIndex] = tmp;
+
+                games[gameId].users[user.id].objects = objects;
+
+                console.log(JSON.stringify(games[gameId].users));
+                
+                user.emit('object request', object);
             }
         }
+        console.log(JSON.stringify(games));
+        io.to(gameId).emit('scoreboard update', { users: [] });
     }
 
-    function getNext(socket) {
+    function getCurrent(socket) {
         var gameId = getGame(socket);
-        games[gameId].users[socket.id].score++;
-        scoreboardUpdate(gameId, socket);
+        if (!games[gameId] || !games[gameId].users[socket.id] || !games[gameId].objects) return undefined;
         if (games[gameId].users[socket.id].score >= games[gameId].objects.length) {
             // User has won
             return undefined;
@@ -172,66 +205,58 @@ module.exports = (io) => {
         }
     }
 
-    function scoreboardUpdate(gameId, socket) {
+    function getNext(socket) {
+        var gameId = getGame(socket);
+        if (!games[gameId]) return undefined;
+        if (!games[gameId].users[socket.id]) return undefined;
+        games[gameId].users[socket.id].score++;
+        scoreboardUpdate(gameId, socket);
+        return getCurrent(socket);
+    }
 
-        // Determine if one of the top three players have changed (i.e. if socket was one of them)
+    /**
+     * Gets the top n players (where score > 0)
+     * @param {String} gameId 
+     * @param {Number} n 
+     */
+    function getTopN(gameId, n) {
+        // Get the users in game
         var users = Object.keys(games[gameId].users);
-        var top1 = { score: -1 };
-        var top2 = { score: -1 };
-        var top3 = { score: -1 };
-        for (var i = 0; i < users.length; i++) {
-            console.log('Checking user ' + users[i]);
-            if (games[gameId].users[users[i]] == undefined) continue;
-            var userScore = games[gameId].users[users[i]].score;
-            console.log(userScore);
-            if (top1.score < userScore) {
-                // Player is in first
-                top1.user = users[i];
-                top1.score = userScore;
-            } else if (top2.score < userScore) {
-                top2.user = users[i];
-                top2.score = userScore;
-            } else if (top3.score < userScore) {
-                top3.user = users[i];
-                top3.score = userScore;
-            }
-        }
+        // Holder for top n players
+        var top = [];
 
-        if (socket == undefined) {
-            // Send scoreboard anyway
-            var bundle = {
-                users: []
-            };
-            var u1 = games[gameId].users[0];
-            if (u1 != undefined) bundle.users.push(u1);
-            var u2 = games[gameId].users[0];
-            if (u2 != undefined) bundle.users.push(u2);
-            var u3 = games[gameId].users[0];
-            if (u3 != undefined) bundle.users.push(u3);
-            io.to(gameId).emit('scoreboard update', bundle);
-        } else {
-            if (top1.user == socket.id || top2.user == socket.id || top3.user == socket.id) {
-                log(socket.id, "Updating scoreboard");
-                // Update the scoreboard
-                var bundle = {
-                    users: []
-                };
-                if (games[gameId].users[top1.user] != undefined) {
-                    top1.user = games[gameId].users[top1.user];
-                    bundle.users.push(top1.user);
+        console.log(users);
+        // Iterate through users in game
+        for (var i = 0; i < users.length; i++) {
+            var user = games[gameId].users[users[i]];
+            if (user == undefined || user.score == 0) continue;
+            
+            // Check if this user is one of the top n
+            for (var j = 0; j < n; j++) {
+                if (top[j] == undefined || top[j].score < user.score) {
+                    top[j] = JSON.parse(JSON.stringify(user));
+                    top[j].objects = undefined;
+                    top[j].gameId = undefined;
+                    break;
                 }
-                if (games[gameId].users[top2.user] != undefined) {
-                    top2.user = games[gameId].users[top2.user];
-                    bundle.users.push(top2.user);
-                }
-                if (games[gameId].users[top3.user] != undefined) {
-                    top3.user = games[gameId].users[top3.user];
-                    bundle.users.push(top3.user);
-                }
-                io.to(gameId).emit('scoreboard update', bundle);
             }
         }
-        
+    
+        return top;
+    }
+
+    /**
+     * Updates the scoreboard
+     * @param {String} gameId 
+     * @param {WebSocket} socket 
+     */
+    function scoreboardUpdate(gameId, socket) {
+        // Update the scoreboard
+        var bundle = {
+            users: getTopN(gameId, 3)
+        };
+
+        io.to(gameId).emit('scoreboard update', bundle);        
     }
 
     /**
@@ -259,6 +284,24 @@ module.exports = (io) => {
     }
 
     /**
+     * Deletes a game
+     * @param {String} gameId 
+     */
+    function deleteGame(gameId) {
+        io.to(gameId).emit('game deleted');
+        games[gameId] = undefined;
+
+        io.of('/').in(gameId).clients(function(error, clients) {
+            if (clients.length > 0) {
+                clients.forEach(function (socket_id) {
+                    io.sockets.sockets[socket_id].leave(gameId);
+                    users[socket_id].gameId = undefined;
+                });
+            }
+        });
+    }
+
+    /**
      * Emits a user list update to clients in a game
      * @param {String} gameId 
      * @param {String} reason 
@@ -280,8 +323,6 @@ module.exports = (io) => {
 
         io.to(gameId).emit('userlist update', emittedBundle);
     }
-
-
 
     /**
      * Handler on a socket connection being a established
@@ -355,18 +396,26 @@ module.exports = (io) => {
         socket.on('item detected', (object) => {
             // Verify that object is the correct object to avoid duplicated calls etc.
             var gameId = getGame(socket);
-            log(socket.id, "User guessed " + object);
-            if (games[gameId].users[socket.id].objects[games[gameId].users[socket.id].score] == object) {
+            var current = getCurrent(socket);
+            log(socket.id, `User guessed ${object}, actual answer was ${current}`);
+            if (current == object) {
                 // Success!
                 var next = getNext(socket);
                 if (next == undefined) {
-                    // TODO: User has won
-                    next = "WIN!"
-                } // else {
-                socket.emit('object request', next);
-                // }
+                    // Use has won
+                    io.to(gameId).emit('end game', {
+                        users: getTopN(gameId, 3)
+                    });
+                    deleteGame(gameId);
+                } else {
+                    socket.emit('object request', next);
+                }
             }
         });
+
+        socket.on('skip', () => {
+            skip(socket);
+        })
 
         /**
          * Leave game request

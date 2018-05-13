@@ -7,7 +7,7 @@ function generateRandomInt(max, min = 0) {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function generateRandomId(length, charset = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789") {
+function generateRandomId(length, charset = "0123456789") {
     var output = "";
 
     if (typeof(length) != "number") throw new Error("Length must be a number");
