@@ -85,13 +85,7 @@ public abstract class CameraActivity extends FragmentActivity
 
         setContentView(R.layout.activity_camera);
 
-
-
-        if (hasPermission()) {
-            setFragment();
-        } else {
-            requestPermission();
-        }
+        setFragment();
     }
 
     private byte[] lastPreviewFrame;

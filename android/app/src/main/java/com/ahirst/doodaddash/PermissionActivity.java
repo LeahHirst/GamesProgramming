@@ -16,6 +16,8 @@ import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.Button;
 
+import com.ahirst.doodaddash.util.AnimSlide;
+import com.ahirst.doodaddash.util.DashSlide;
 import com.github.paolorotolo.appintro.AppIntro;
 import com.github.paolorotolo.appintro.AppIntro2;
 import com.github.paolorotolo.appintro.AppIntro2Fragment;
@@ -37,23 +39,31 @@ public class PermissionActivity extends AppIntro2 {
 
         activityContext = this;
 
-        addSlide(AppIntro2Fragment.newInstance("Welcome to Doodad Dash!", "Doodad Dash is a party game ", 0, 0));
+        addSlide(DashSlide.newInstance(R.layout.slide_first));
+        addSlide(DashSlide.newInstance(R.layout.slide_second));
+        addSlide(DashSlide.newInstance(R.layout.slide_three));
+        addSlide(AnimSlide.newInstance(R.layout.slide_four));
+        addSlide(DashSlide.newInstance(R.layout.slide_five));
+
+
+        boolean skipPermissionCheck = getIntent().getExtras().getBoolean("skippermcheck");
 
         if (ContextCompat.checkSelfPermission(this,
                 Manifest.permission.CAMERA)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            // Permission not yet granted. Wait for user to read prompt and click button
-            if (!ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.CAMERA)) {
-                // No explanation needed; request the permission
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.CAMERA},
-                        PERMISSION_REQUEST_CAMERA);
-            }
-        } else {
+                == PackageManager.PERMISSION_GRANTED && !skipPermissionCheck) {
             openMainActivity();
         }
+    }
+
+    @Override
+    public void onSlideChanged(@Nullable Fragment oldFragment, @Nullable Fragment newFragment) {
+//        if (oldFragment instanceof AnimSlide) {
+//            ((AnimSlide)oldFragment).animRunning = false;
+//        } else if (newFragment instanceof AnimSlide) {
+//            ((AnimSlide)newFragment).animRunning = true;
+//        }
+
+        super.onSlideChanged(oldFragment, newFragment);
     }
 
     private void requestPermissions() {

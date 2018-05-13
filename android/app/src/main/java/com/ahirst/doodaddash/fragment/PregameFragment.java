@@ -1,6 +1,7 @@
 package com.ahirst.doodaddash.fragment;
 
 import android.app.Activity;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -50,12 +51,14 @@ public class PregameFragment extends Fragment {
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        // Get references to views
         mPredictionLabel = getView().findViewById(R.id.prediction_label);
         mPredictionDescriptionLabel = getView().findViewById(R.id.prediction_label_label);
         mStatusLabel = getView().findViewById(R.id.status_label);
         mCountdownLabel = getView().findViewById(R.id.starting_in);
         mCountdownOverlay = getView().findViewById(R.id.countdown_overlay);
 
+        // Register socket events
         Program.getSocket(new SocketAction() {
             @Override
             public void run(Socket socket) {
@@ -74,6 +77,7 @@ public class PregameFragment extends Fragment {
             }
         });
 
+        // Handle the lock in button
         mLockInButton = getView().findViewById(R.id.btn_lockin);
         mLockInButton.setClickable(true);
         mLockInButton.setOnClickListener(new View.OnClickListener() {
@@ -170,7 +174,8 @@ public class PregameFragment extends Fragment {
     }
 
     private void transitionToInGame() {
-        FragmentManager fragmentManager = getFragmentManager();
+        if (getActivity() == null) return;
+        FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
         FragmentTransaction ft = fragmentManager.beginTransaction();
         ft.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left);
         ft.replace(R.id.overlay_fragment, new InGameFragment());
@@ -178,10 +183,14 @@ public class PregameFragment extends Fragment {
     }
 
     @Override
-    public void onDestroyView() {
+    public void onDetach() {
+        super.onDetach();
+    }
 
-
-        super.onDestroyView();
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        mActivity = getActivity();
     }
 
     @Override

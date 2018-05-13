@@ -6,4 +6,7 @@
     <color name="buttonDisabled">#bdbdbd</color>
     <color name="successColor">#4caf50</color>
     <color name="orange">#ff9800</color>
+    <color name="gold">#ffca28</color>
+    <color name="silver">#bdbdbd</color>
+    <color name="bronze">#a1887f</color>
 </resources>
