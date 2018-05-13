@@ -14,7 +14,7 @@ function generateRandomId(length, charset = "0123456789") {
     if (length <= 0) throw new Error ("Length must be more than zero");
 
     for (var i = 0; i < length; i++) {
-        output += charset.charAt(generateRandomInt(charset.length));
+        output += charset.charAt(generateRandomInt(charset.length-1));
     }
 
     return output;
