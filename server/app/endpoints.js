@@ -234,9 +234,10 @@ module.exports = (io) => {
             // Check if this user is one of the top n
             for (var j = 0; j < n; j++) {
                 if (top[j] == undefined || top[j].score < user.score) {
-                    top[j] = JSON.parse(JSON.stringify(user));
+                    top.splice(j, 0, JSON.parse(JSON.stringify(user)));
                     top[j].objects = undefined;
                     top[j].gameId = undefined;
+                    top[n+1] = undefined;
                     break;
                 }
             }
