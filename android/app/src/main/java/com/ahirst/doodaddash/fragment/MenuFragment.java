@@ -11,6 +11,8 @@ import android.view.ViewGroup;
 
 import com.ahirst.doodaddash.R;
 
+import static java.lang.Boolean.getBoolean;
+
 public class MenuFragment extends Fragment {
 
     @Override
@@ -22,8 +24,21 @@ public class MenuFragment extends Fragment {
     public void onStart() {
         super.onStart();
 
+        Bundle bundle = getArguments();
+        boolean postgame = false;
+
+        if (bundle != null) {
+            postgame = bundle.getBoolean("postgame");
+        }
+
         FragmentTransaction ft = getFragmentManager().beginTransaction();
-        ft.replace(R.id.menu_fragment, new SignInFragment());
+        if (!postgame) {
+            ft.replace(R.id.menu_fragment, new SignInFragment());
+        } else {
+            ft.replace(R.id.menu_fragment, new PostgameFragment());
+        }
+
         ft.commit();
+
     }
 }

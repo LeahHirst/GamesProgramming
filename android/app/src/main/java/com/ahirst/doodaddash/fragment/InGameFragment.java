@@ -10,6 +10,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentManager;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.res.ResourcesCompat;
 import android.support.v7.widget.CardView;
@@ -38,6 +40,7 @@ import com.squareup.picasso.Picasso;
 import com.transitionseverywhere.extra.Scale;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.List;
@@ -163,7 +166,24 @@ public class InGameFragment extends Fragment {
                 socket.on("end game", new Emitter.Listener() {
                     @Override
                     public void call(Object... args) {
-                        // TODO: Handle endgame
+                        JSONObject obj = (JSONObject) args[0];
+
+                        try {
+                            JSONArray users = obj.getJSONArray("users");
+
+                            Program.cameraPollListener = null;
+
+                            Program.updatePlayerList(PlayerUtil.parsePlayersFromJSON(users));
+
+                            mActivity.runOnUiThread(new Runnable() {
+                                @Override
+                                public void run() {
+                                    transitionToPostGame();
+                                }
+                            });
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
                     }
                 });
             }
@@ -195,6 +215,18 @@ public class InGameFragment extends Fragment {
         startTimer();
 
         super.onActivityCreated(savedInstanceState);
+    }
+
+    private void transitionToPostGame() {
+        FragmentManager fragmentManager = getFragmentManager();
+        FragmentTransaction ft = fragmentManager.beginTransaction();
+        MenuFragment menuFragment = new MenuFragment();
+        Bundle bundle = new Bundle();
+        bundle.putBoolean("postgame", true);
+        menuFragment.setArguments(bundle);
+        ft.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left);
+        ft.replace(R.id.overlay_fragment, menuFragment);
+        ft.commit();
     }
 
     private void successAnimation(String newObject) {
