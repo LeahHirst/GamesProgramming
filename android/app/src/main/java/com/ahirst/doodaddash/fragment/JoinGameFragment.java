@@ -44,7 +44,11 @@ public class JoinGameFragment extends Fragment {
                                 FragmentManager fragmentManager = getFragmentManager();
                                 FragmentTransaction ft = fragmentManager.beginTransaction();
                                 ft.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left);
-                                ft.replace(R.id.menu_fragment, new JoinGameLobbyFragment());
+                                JoinGameLobbyFragment newFrag = new JoinGameLobbyFragment();
+                                Bundle bundle = new Bundle();
+                                bundle.putString("pin", gamePin);
+                                newFrag.setArguments(bundle);
+                                ft.replace(R.id.menu_fragment, newFrag);
                                 ft.commit();
                             }
                         });

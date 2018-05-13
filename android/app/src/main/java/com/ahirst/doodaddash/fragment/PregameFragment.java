@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
@@ -33,7 +34,7 @@ import io.socket.emitter.Emitter;
 
 public class PregameFragment extends Fragment {
 
-    Activity mActivity;
+    FragmentActivity mActivity;
     TextView mPredictionLabel;
     TextView mPredictionDescriptionLabel;
     TextView mStatusLabel;
@@ -174,8 +175,7 @@ public class PregameFragment extends Fragment {
     }
 
     private void transitionToInGame() {
-        if (getActivity() == null) return;
-        FragmentManager fragmentManager = getActivity().getSupportFragmentManager();
+        FragmentManager fragmentManager = mActivity.getSupportFragmentManager();
         FragmentTransaction ft = fragmentManager.beginTransaction();
         ft.setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left);
         ft.replace(R.id.overlay_fragment, new InGameFragment());
