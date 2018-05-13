@@ -230,7 +230,7 @@ public class InGameFragment extends Fragment {
     }
 
     private void successAnimation(String newObject) {
-        if (mCurrentContainer != null) {
+        if (mCurrentContainer != null && getContext() != null) {
             int white = Color.WHITE;
             int black = Color.BLACK;
             int green = ContextCompat.getColor(getContext(), R.color.successColor);

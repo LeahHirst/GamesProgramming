@@ -48,6 +48,14 @@ public class JoinGameLobbyFragment extends Fragment {
         mGamePinLabel = getView().findViewById(R.id.game_pin);
         mPlayerList = getView().findViewById(R.id.player_list);
 
+        Bundle bundle = getArguments();
+        if (bundle != null) {
+            String pin = bundle.getString("pin");
+            if (pin != null) {
+                mGamePinLabel.setText(pin);
+            }
+        }
+
         Program.getSocket(new SocketAction() {
             @Override
             public void run(Socket socket) {
