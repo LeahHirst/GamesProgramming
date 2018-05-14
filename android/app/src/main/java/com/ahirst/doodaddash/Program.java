@@ -25,7 +25,7 @@ import io.socket.emitter.Emitter;
 public class Program {
 
     // Game options
-    private static final String GAME_SERVER_URI = "http://192.168.0.17:3000";
+    private static final String GAME_SERVER_URI = "http://ahirst.com:3000";
     public static final int CAMERA_POLL_DURATION = 500;
     public static final int GAME_TIME = 180; // Seconds
 
@@ -97,7 +97,7 @@ public class Program {
     }
 
     public static void getSocket(final SocketAction action) {
-        if (mSocket == null) {
+        if (mSocket == null || !mSocket.connected()) {
             establishSocketConnection();
             mSocket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
                 @Override
