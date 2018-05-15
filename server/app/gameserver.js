@@ -6,6 +6,7 @@ const express = require('express');
 const app     = express();
 const sio     = require('socket.io');
 const config  = require(process.env.DD_CONFIG || '/etc/dd_conf/config.json');
+const fs      = require('fs');
 
 app.use(express.static('public'));
 
@@ -30,7 +31,10 @@ class GameServer {
 
             // Create server
             if (!config.HTTPS) throw new Error('HTTPS required for production');
-            this.server = require('https').createServer(config.HTTPS);
+            this.server = require('https').createServer({
+                key: fs.readFileSync(config.HTTPS.key),
+                cert: fs.readFileSync(config.HTTPS.cert)
+            });
         }
 
         // Initiate a socket.io instance

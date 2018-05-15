@@ -119,7 +119,7 @@ module.exports = (io) => {
         
         setTimeout(() => {
             emitUserListUpdate(gameId, `${getUserName(socket.id)} has joined the game`);
-        }, 1000);
+        }, 500);
         
         return true;
     }
@@ -212,7 +212,7 @@ module.exports = (io) => {
     function getCurrent(socket) {
         var gameId = getGame(socket);
         if (!games[gameId] || !games[gameId].users[socket.id] || !games[gameId].objects) return undefined;
-        if (games[gameId].users[socket.id]) return undefined;
+        if (!games[gameId].users[socket.id]) return undefined;
         if (games[gameId].users[socket.id].score >= games[gameId].objects.length) {
             // User has won
             return undefined;
