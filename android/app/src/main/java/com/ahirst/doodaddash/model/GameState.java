@@ -10,6 +10,16 @@ public class GameState {
     private String currentObject;
     private int playerScore;
 
+    private GameOptions gameOptions;
+
+    public void setGameOptions(GameOptions options) {
+        this.gameOptions = options;
+    }
+
+    public GameOptions getGameOptions() {
+        return gameOptions;
+    }
+
     public void setGamePin(String gamePin) {
         this.gamePin = gamePin;
     }
