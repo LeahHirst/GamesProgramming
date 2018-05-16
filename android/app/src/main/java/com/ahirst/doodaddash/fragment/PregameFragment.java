@@ -64,7 +64,7 @@ public class PregameFragment extends Fragment {
             @Override
             public void run(Socket socket) {
 
-                socket.on("start countdown", new Emitter.Listener() {
+                socket.once("start countdown", new Emitter.Listener() {
                     @Override
                     public void call(Object... args) {
                         mActivity.runOnUiThread(new Runnable() {

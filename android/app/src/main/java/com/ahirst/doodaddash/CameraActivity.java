@@ -56,14 +56,18 @@ public class CameraActivity extends org.tensorflow.demo.CameraActivity implement
     private Matrix frameToCropTransform;
     private Matrix cropToFrameTransform;
 
+    private Fragment fragment;
+
     private static final boolean MAINTAIN_ASPECT = true;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
+        fragment = new MenuFragment();
+
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        ft.replace(R.id.overlay_fragment, new MenuFragment());
+        ft.replace(R.id.overlay_fragment, fragment);
         ft.commit();
     }
 
@@ -137,6 +141,12 @@ public class CameraActivity extends org.tensorflow.demo.CameraActivity implement
         super.onResume();
 
         paused = false;
+
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        ft.replace(R.id.overlay_fragment, fragment);
+        ft.commit();
+
+        readyForNextImage();
     }
 
     @Override

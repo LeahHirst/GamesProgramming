@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
@@ -51,7 +52,7 @@ import io.socket.emitter.Emitter;
 
 public class InGameFragment extends Fragment {
 
-    private Activity mActivity;
+    private FragmentActivity mActivity;
 
     private boolean isFirst = true;
     private boolean skip = false;
@@ -120,7 +121,7 @@ public class InGameFragment extends Fragment {
 
         Program.getSocket(new SocketAction() {
             @Override
-            public void run(Socket socket) {
+            public void run(final Socket socket) {
                 socket.on("object request", new Emitter.Listener() {
                     @Override
                     public void call(Object... args) {
@@ -170,10 +171,13 @@ public class InGameFragment extends Fragment {
                         }
                     }
                 });
-                socket.on("end game", new Emitter.Listener() {
+                socket.once("end game", new Emitter.Listener() {
                     @Override
                     public void call(Object... args) {
                         JSONObject obj = (JSONObject) args[0];
+
+                        socket.off("object request");
+                        socket.off("scoreboard update");
 
                         try {
                             JSONArray users = obj.getJSONArray("users");
@@ -225,7 +229,7 @@ public class InGameFragment extends Fragment {
     }
 
     private void transitionToPostGame() {
-        FragmentManager fragmentManager = getFragmentManager();
+        FragmentManager fragmentManager = mActivity.getSupportFragmentManager();
         FragmentTransaction ft = fragmentManager.beginTransaction();
         MenuFragment menuFragment = new MenuFragment();
         Bundle bundle = new Bundle();
@@ -410,22 +414,25 @@ public class InGameFragment extends Fragment {
     }
 
     private void updateScoreboard() {
-        List<Player> players = Program.getPlayerList();
-        if (players != null) {
-            TransitionManager.beginDelayedTransition(mScoreboard, new ChangeBounds());
-            mScoreboard.removeAllViews();
-            boolean playerFeaturedInScore = false;
-            for (int i = 0; i < players.size(); i++) {
-                Player player = players.get(i);
-                if (player.imgUrl == Program.getUserPhoto()) playerFeaturedInScore = true;
-                if (i == 2 && !playerFeaturedInScore) {
-                    player = Program.getPlayer();
+        Context context = getContext();
+        if (context != null && mScoreboard != null) {
+            List<Player> players = Program.getPlayerList();
+            if (players != null) {
+                TransitionManager.beginDelayedTransition(mScoreboard, new ChangeBounds());
+                mScoreboard.removeAllViews();
+                boolean playerFeaturedInScore = false;
+                for (int i = 0; i < players.size(); i++) {
+                    Player player = players.get(i);
+                    if (player.imgUrl == Program.getUserPhoto()) playerFeaturedInScore = true;
+                    if (i == 2 && !playerFeaturedInScore) {
+                        player = Program.getPlayer();
+                    }
+                    PlayerLabelView playerLabel = new PlayerLabelView(getContext());
+                    Picasso.get().load(player.imgUrl).into(playerLabel.image);
+                    playerLabel.text.setText(Integer.toString(player.score));
+                    TransitionManager.setTransitionName(playerLabel, player.imgUrl);
+                    mScoreboard.addView(playerLabel);
                 }
-                PlayerLabelView playerLabel = new PlayerLabelView(getContext());
-                Picasso.get().load(player.imgUrl).into(playerLabel.image);
-                playerLabel.text.setText(Integer.toString(player.score));
-                TransitionManager.setTransitionName(playerLabel, player.imgUrl);
-                mScoreboard.addView(playerLabel);
             }
         }
     }

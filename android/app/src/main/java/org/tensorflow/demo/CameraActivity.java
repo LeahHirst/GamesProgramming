@@ -226,6 +226,7 @@ public abstract class CameraActivity extends FragmentActivity
     @Override
     public synchronized void onResume() {
         LOGGER.d("onResume " + this);
+
         super.onResume();
 
         handlerThread = new HandlerThread("inference");
@@ -313,8 +314,9 @@ public abstract class CameraActivity extends FragmentActivity
     }
 
     private String chooseCamera() {
-        final CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
         try {
+            final CameraManager manager = (CameraManager) getSystemService(Context.CAMERA_SERVICE);
+
             for (final String cameraId : manager.getCameraIdList()) {
                 final CameraCharacteristics characteristics = manager.getCameraCharacteristics(cameraId);
 

@@ -23,6 +23,8 @@ import com.github.paolorotolo.appintro.AppIntro2;
 import com.github.paolorotolo.appintro.AppIntro2Fragment;
 import com.github.paolorotolo.appintro.AppIntroFragment;
 
+import java.security.Permissions;
+
 /**
  * Created by adamhirst on 06/05/2018.
  */
@@ -45,6 +47,7 @@ public class PermissionActivity extends AppIntro2 {
         addSlide(AnimSlide.newInstance(R.layout.slide_four));
         addSlide(DashSlide.newInstance(R.layout.slide_five));
 
+        askForPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 5);
 
         boolean skipPermissionCheck = getIntent().getExtras().getBoolean("skippermcheck");
 
