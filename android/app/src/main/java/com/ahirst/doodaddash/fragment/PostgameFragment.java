@@ -1,5 +1,7 @@
 package com.ahirst.doodaddash.fragment;
 
+import android.app.Activity;
+import android.content.Context;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -20,29 +22,39 @@ import java.util.List;
 
 public class PostgameFragment extends Fragment {
 
+    Activity mActivity;
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_postgame, container, false);
     }
 
     @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        mActivity = getActivity();
+    }
+
+    @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+
         List<Player> players = Program.getPlayerList();
 
-        View firstContainer = getView().findViewById(R.id.first_place_container);
-        View secondContainer = getView().findViewById(R.id.second_place_container);
-        View thirdContainer = getView().findViewById(R.id.third_place_container);
-        ImageView firstImage = getView().findViewById(R.id.first_image);
-        ImageView secondImage = getView().findViewById(R.id.second_image);
-        ImageView thirdImage = getView().findViewById(R.id.third_image);
-        TextView firstName = getView().findViewById(R.id.first_place_name);
-        TextView secondName = getView().findViewById(R.id.second_place_name);
-        TextView thirdName = getView().findViewById(R.id.third_place_name);
-        TextView firstPoints = getView().findViewById(R.id.first_place_points);
-        TextView secondPoints = getView().findViewById(R.id.second_place_points);
-        TextView thirdPoints = getView().findViewById(R.id.third_player_points);
+        View firstContainer = mActivity.findViewById(R.id.first_place_container);
+        View secondContainer = mActivity.findViewById(R.id.second_place_container);
+        View thirdContainer = mActivity.findViewById(R.id.third_place_container);
+        ImageView firstImage = mActivity.findViewById(R.id.first_image);
+        ImageView secondImage = mActivity.findViewById(R.id.second_image);
+        ImageView thirdImage = mActivity.findViewById(R.id.third_image);
+        TextView firstName = mActivity.findViewById(R.id.first_place_name);
+        TextView secondName = mActivity.findViewById(R.id.second_place_name);
+        TextView thirdName = mActivity.findViewById(R.id.third_place_name);
+        TextView firstPoints = mActivity.findViewById(R.id.first_place_points);
+        TextView secondPoints = mActivity.findViewById(R.id.second_place_points);
+        TextView thirdPoints = mActivity.findViewById(R.id.third_player_points);
 
-        View btnMenu = getView().findViewById(R.id.btn_menu);
+        View btnMenu = mActivity.findViewById(R.id.btn_menu);
         btnMenu.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -83,8 +95,6 @@ public class PostgameFragment extends Fragment {
         } else {
             thirdContainer.setVisibility(View.INVISIBLE);
         }
-
-        super.onActivityCreated(savedInstanceState);
     }
 
     private void goToMainMenu() {

@@ -71,32 +71,6 @@
             android:layout_width="120dp"
             android:layout_height="wrap_content"
             android:layout_margin="15dp"
-            android:id="@+id/btn_achivements"
-            android:rotation="2">
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-                <ImageView
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    android:src="@drawable/ic_achivement"
-                    android:layout_gravity="center"
-                    android:layout_marginTop="15dp" />
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Achivements"
-                    android:layout_gravity="center"
-                    android:layout_marginTop="15dp"
-                    android:layout_marginBottom="10dp"
-                    android:textSize="16dp" />
-            </LinearLayout>
-        </android.support.v7.widget.CardView>
-        <android.support.v7.widget.CardView
-            android:layout_width="120dp"
-            android:layout_height="wrap_content"
-            android:layout_margin="15dp"
             android:id="@+id/btn_help"
             android:rotation="-3">
             <LinearLayout
@@ -119,38 +93,6 @@
                     android:layout_marginTop="15dp"
                     android:layout_marginBottom="10dp"
                     android:textSize="16dp"/>
-            </LinearLayout>
-        </android.support.v7.widget.CardView>
-    </LinearLayout>
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_gravity="center">
-        <android.support.v7.widget.CardView
-            android:layout_width="120dp"
-            android:layout_height="wrap_content"
-            android:layout_margin="15dp"
-            android:id="@+id/btn_settings"
-            android:rotation="-3">
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical">
-                <ImageView
-                    android:layout_width="50dp"
-                    android:layout_height="50dp"
-                    android:src="@drawable/ic_settings"
-                    android:layout_gravity="center"
-                    android:layout_marginTop="15dp" />
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Settings"
-                    android:layout_gravity="center"
-                    android:layout_marginTop="15dp"
-                    android:layout_marginBottom="10dp"
-                    android:textSize="16dp" />
             </LinearLayout>
         </android.support.v7.widget.CardView>
         <android.support.v7.widget.CardView

@@ -25,7 +25,7 @@ import io.socket.emitter.Emitter;
 public class Program {
 
     // Game options
-    private static final String GAME_SERVER_URI = "http://ahirst.com:3000";
+    private static final String GAME_SERVER_URI = "https://ahirst.com:3000";
     public static final int CAMERA_POLL_DURATION = 500;
     public static final int GAME_TIME = 180; // Seconds
 
@@ -71,7 +71,7 @@ public class Program {
         if (mSocket != null) {
             mSocket.emit("update profile", mProfile.name, mProfile.imgUrl);
         } else {
-            establishSocketConnection();
+            establishSocketConnection(null);
         }
     }
 
@@ -83,9 +83,20 @@ public class Program {
         return mProfile.name;
     }
 
-    public static void establishSocketConnection() {
+    public static void establishSocketConnection(final SocketAction action) {
         try {
             mSocket = IO.socket(GAME_SERVER_URI);
+
+            if (action != null) {
+                mSocket.once(Socket.EVENT_CONNECT, new Emitter.Listener() {
+                    @Override
+                    public void call(Object... args) {
+                        action.run(mSocket);
+                    }
+                });
+            }
+
+            mSocket.connect();
 
             if (mProfile != null) {
                 mSocket.emit("update profile", mProfile.name, mProfile.imgUrl);
@@ -93,18 +104,11 @@ public class Program {
         } catch (URISyntaxException e) {
             e.printStackTrace();
         }
-
     }
 
     public static void getSocket(final SocketAction action) {
         if (mSocket == null || !mSocket.connected()) {
-            establishSocketConnection();
-            mSocket.on(Socket.EVENT_CONNECT, new Emitter.Listener() {
-                @Override
-                public void call(Object... args) {
-                    action.run(mSocket);
-                }
-            });
+            establishSocketConnection(action);
         } else {
             action.run(mSocket);
         }
@@ -121,7 +125,13 @@ public class Program {
             mSocket.connect();
 
             // Initiate classifier
-            mClassifier = new ImageClassifier(assetManager);
+            mClassifier = new ImageClassifier.Builder(assetManager)
+                    .setModelFile("file:///android_asset/tensorflow_inception_graph.pb")
+                    .setLabelFile("file:///android_asset/imagenet_comp_graph_label_strings.txt")
+                    .setInputSize(224)
+                    .setInputName("input")
+                    .setOutputName("output")
+                    .create();
 
             initiated = true;
         }

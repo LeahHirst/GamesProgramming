@@ -58,7 +58,7 @@ public class JoinGameLobbyFragment extends Fragment {
 
         Program.getSocket(new SocketAction() {
             @Override
-            public void run(Socket socket) {
+            public void run(final Socket socket) {
                 socket.on("userlist update", new Emitter.Listener() {
                     @Override
                     public void call(Object... args) {
@@ -81,9 +81,11 @@ public class JoinGameLobbyFragment extends Fragment {
                     }
                 });
 
-                socket.on("start pregame", new Emitter.Listener() {
+                socket.once("start pregame", new Emitter.Listener() {
                     @Override
                     public void call(Object... args) {
+                        socket.off("userlist update");
+
                         mActivity.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {

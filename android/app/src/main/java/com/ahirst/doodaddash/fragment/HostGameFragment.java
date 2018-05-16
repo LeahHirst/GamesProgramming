@@ -139,6 +139,7 @@ public class HostGameFragment extends Fragment {
             @Override
             public void run(Socket socket) {
                 socket.emit("start pregame");
+                socket.off("userlist update");
             }
         });
 
@@ -154,6 +155,7 @@ public class HostGameFragment extends Fragment {
             @Override
             public void run(Socket socket) {
                 socket.emit("leave game");
+                socket.off("userlist update");
             }
         });
 
