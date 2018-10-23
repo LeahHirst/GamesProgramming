@@ -1,7 +1,7 @@
 <div align="center"><h1>Doodad Dash</h1></div>
 <div align="center">Play with your friends to find objects in your environment to be crowned king of the doodads!<br>Univesity assignment for Games Programming</div>
 <br>
-<div align="center"><img src="https://github.com/AdamHirst/GamesProgramming/blob/AdamHirst-patch-1/Screen%20Shot%202018-10-02%20at%2010.53.33.png?raw=true" /></div>
+<div align="center"><img src="https://raw.githubusercontent.com/AdamHirst/GamesProgramming/master/Screen%20Shot%202018-10-02%20at%2010.53.33.png" /></div>
 <br>
 
 [Now available on Google Play for Android!](https://play.google.com/store/apps/details?id=com.ahirst.doodaddash) | [View gameplay on YouTube](https://www.youtube.com/watch?v=vMC65P_YoKQ)
